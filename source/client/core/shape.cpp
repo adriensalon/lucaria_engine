@@ -1,0 +1,121 @@
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <lucaria/core/math.hpp>
+#include <lucaria/core/shape.hpp>
+
+namespace lucaria {
+
+extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
+
+namespace {
+
+    static void make_convex_hull_shape(const geometry& from, std::unique_ptr<btCollisionShape>& handle)
+    {
+        handle = std::make_unique<btConvexHullShape>();
+        btConvexHullShape* _hull_shape = static_cast<btConvexHullShape*>(handle.get());
+        for (const glm::vec3& _position : from.data.positions) {
+            _hull_shape->addPoint(btVector3(_position.x, _position.y, _position.z));
+        }
+        _hull_shape->recalcLocalAabb();
+    }
+
+    static void make_triangle_mesh_shape(const geometry& from, std::unique_ptr<btCollisionShape>& handle, std::unique_ptr<btTriangleMesh>& triangle_handle)
+    {
+        btVector3 _vertex_1, _vertex_2, _vertex_3;
+        triangle_handle = std::make_unique<btTriangleMesh>();
+        for (const glm::uvec3& _index : from.data.indices) {
+            _vertex_1 = btVector3(from.data.positions[_index.x].x, from.data.positions[_index.x].y, from.data.positions[_index.x].z);
+            _vertex_2 = btVector3(from.data.positions[_index.y].x, from.data.positions[_index.y].y, from.data.positions[_index.y].z);
+            _vertex_3 = btVector3(from.data.positions[_index.z].x, from.data.positions[_index.z].y, from.data.positions[_index.z].z);
+            triangle_handle->addTriangle(_vertex_1, _vertex_2, _vertex_3);
+        }
+        handle = std::make_unique<btBvhTriangleMeshShape>(triangle_handle.get(), true);
+    }
+
+    // todo impact triangle mesh
+
+}
+
+shape::shape(const geometry& from, const shape_algorithm algorithm)
+{
+    if (algorithm == shape_algorithm::convex_hull) {
+        make_convex_hull_shape(from, _handle);
+
+    } else if (algorithm == shape_algorithm::triangle_mesh) {
+        make_triangle_mesh_shape(from, _handle, _triangle_handle);
+
+    } else if (algorithm == shape_algorithm::impact_triangle_mesh) {
+        LUCARIA_RUNTIME_ERROR("Impact triangle mesh not implemented") // TODO
+    }
+
+    glm::float32 _zdistance = 0.f; // lets compute ?
+    _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +_zdistance, 0));
+    _center_to_feet = glm::inverse(_feet_to_center);
+}
+
+shape::shape(btCollisionShape* handle, const glm::float32 zdistance)
+{
+    _handle = std::unique_ptr<btCollisionShape>(handle);
+    _feet_to_center = glm::translate(glm::mat4(1), glm::vec3(0, +zdistance, 0));
+    _center_to_feet = glm::translate(glm::mat4(1), glm::vec3(0, -zdistance, 0));
+}
+
+btCollisionShape* shape::get_handle()
+{
+    return _handle.get();
+}
+
+const btCollisionShape* shape::get_handle() const
+{
+    return _handle.get();
+}
+
+glm::mat4 shape::get_feet_to_center() const
+{
+    return _feet_to_center;
+}
+
+glm::mat4 shape::get_center_to_feet() const
+{
+    return _center_to_feet;
+}
+
+shape shape::create_box(const glm::vec3& half_extents)
+{
+    return shape(new btBoxShape(convert_bullet(half_extents)), half_extents.z);
+}
+
+shape shape::create_sphere(const glm::float32 radius)
+{
+    return shape(new btSphereShape(static_cast<btScalar>(radius)), radius);
+}
+
+shape shape::create_capsule(const glm::float32 radius, const glm::float32 height)
+{
+    return shape(new btCapsuleShape(
+                     static_cast<btScalar>(radius),
+                     static_cast<btScalar>(height)),
+        radius + height * 0.5f);
+}
+
+shape shape::create_cone(const glm::float32 radius, const glm::float32 height)
+{
+    return shape(new btConeShape(
+                     static_cast<btScalar>(radius),
+                     static_cast<btScalar>(height)),
+        height * 0.5f);
+}
+
+fetched<shape> fetch_shape(const std::filesystem::path& data_path, const shape_algorithm algorithm)
+{
+    std::shared_ptr<std::promise<shape>> _promise = std::make_shared<std::promise<shape>>();
+    _fetch_bytes(data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
+        geometry _geometry(_data_bytes);
+        shape _shape(_geometry, algorithm);
+        _promise->set_value(std::move(_shape)); }, true);
+
+    // creating bullet collision shapes on worker thread is safe
+    return fetched<shape>(_promise->get_future());
+}
+
+}
