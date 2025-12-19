@@ -8,7 +8,7 @@ It also builds a resource compiler that generates compressed files that can be f
 
 It features basic rendering (with post processing FXAA), 3D and screen space GUIs, spatialized sound playback, animations blending with events, and root motion based locomotion that can be combined to realtime physics (collisions and forces) as ECS components to benefit from SoA layout.
 
-This code was made to overcome game engines limitations concerning their WebGL target through Emscripten, such as fetching assets dynamically: Godot and Unity use the --preload-file option that fetches all the assets required for the game before entering main(), preventing us to draw anything while waiting. Here we dynamically fetch assets when needed so that we can only download the file formats supported by the implementation (ETC2/S3TC textures for example). For developping commercial games please use a real game engine such as Godot.
+This code was made to overcome game engines limitations concerning their WebGL target through Emscripten, such as fetching assets dynamically: Godot and Unity use the --preload-file option that fetches all the assets required for the game before entering main(), preventing us to draw anything while waiting. Here we dynamically fetch assets when needed so that we can only download the file formats supported by the implementation (ETC2/S3TC textures for example). For developing commercial games please use a real game engine such as Godot.
 
 ## Getting started
 
