@@ -73,7 +73,7 @@ namespace {
                 LUCARIA_RUNTIME_ERROR("Invalid ETC2 image data")
                 break;
             }
-            
+
             const std::uint8_t* _bytes = reinterpret_cast<const std::uint8_t*>(_content.data());
             const std::uint32_t _header_size = sizeof(std::uint32_t) * 16;
             const std::uint32_t _bytes_of_key_value = *(_data32 + 15);
@@ -127,34 +127,32 @@ std::vector<std::filesystem::path> _resolve_image_paths(
         return std::vector<std::filesystem::path>(data_paths.begin(), data_paths.end());
     }
 }
-image::image(const std::vector<char>& data_bytes)
-{
-    load_data_from_bytes(data, data_bytes);
-}
 
-image::image(
-    const std::filesystem::path& data_path,
-    const std::optional<std::filesystem::path>& etc2_path,
-    const std::optional<std::filesystem::path>& s3tc_path)
-{
-    const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
-    _load_bytes(_image_path, [this](const std::vector<char>& _data_bytes) {
-        load_data_from_bytes(data, _data_bytes);
-    });
-}
+namespace detail {
 
-fetched<image> fetch_image(
-    const std::filesystem::path& data_path,
-    const std::optional<std::filesystem::path>& etc2_path,
-    const std::optional<std::filesystem::path>& s3tc_path)
-{
-    const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
-    std::shared_ptr<std::promise<image>> _promise = std::make_shared<std::promise<image>>();
-    _fetch_bytes(_image_path, [_promise](const std::vector<char>& _data_bytes) {
-        image _image(_data_bytes);
+    image_implementation::image_implementation(const std::vector<char>& data_bytes)
+    {
+        load_data_from_bytes(data, data_bytes);
+    }
+
+    image_implementation::image_implementation(image_data&& data)
+        : data(std::move(data))
+    {
+    }
+
+    fetched<image_implementation> fetch_image_cell_async(
+        const std::filesystem::path& data_path,
+        const std::optional<std::filesystem::path>& etc2_path,
+        const std::optional<std::filesystem::path>& s3tc_path)
+    {
+        const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
+        std::shared_ptr<std::promise<image_implementation>> _promise = std::make_shared<std::promise<image_implementation>>();
+        _fetch_bytes(_image_path, [_promise](const std::vector<char>& _data_bytes) {
+        image_implementation _image(_data_bytes);
         _promise->set_value(std::move(_image)); }, true);
 
-    return fetched<image>(_promise->get_future());
-}
+        return fetched<image_implementation>(_promise->get_future());
+    }
 
+}
 }

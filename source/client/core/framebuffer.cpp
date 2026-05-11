@@ -118,7 +118,7 @@ void framebuffer::bind_color(renderbuffer& color)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_depth(detail::texture_cell& depth)
+void framebuffer::bind_depth(detail::texture_implementation& depth)
 {
     if (_texture_depth_id && _texture_depth_id.value() == depth.get_handle()) {
         return;

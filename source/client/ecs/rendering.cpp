@@ -799,7 +799,7 @@ struct rendering_system {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
-                    // const detail::texture_cell& _color = _model._oldcolor.value();
+                    // const detail::texture_implementation& _color = _model._oldcolor.value();
                     _unlit_skinned_program.use();
                     _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                     _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);

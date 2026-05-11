@@ -30,7 +30,7 @@ struct framebuffer {
 
     /// @brief Binds a texture object for the depth attachment of this framebuffer
     /// @param depth the texture object to bind
-    void bind_depth(detail::texture_cell& depth);
+    void bind_depth(detail::texture_implementation& depth);
 
     /// @brief Binds a renderbuffer object for the depth attachment of this framebuffer
     /// @param depth the renderbuffer object to bind

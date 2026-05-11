@@ -75,7 +75,7 @@ cubemap::~cubemap()
     }
 }
 
-cubemap::cubemap(const std::array<image, 6>& images)
+cubemap::cubemap(const std::array<detail::image_implementation, 6>& images)
 {
     glGenTextures(1, &_handle);
     glBindTexture(GL_TEXTURE_CUBE_MAP, _handle);
@@ -85,7 +85,7 @@ cubemap::cubemap(const std::array<image, 6>& images)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     for (glm::uint _index = 0; _index < 6; ++_index) {
-        const image& _image = images[_index];
+        const detail::image_implementation& _image = images[_index];
         const GLsizei _pixels_count = static_cast<GLsizei>(_image.data.pixels.size());
         const GLubyte* _pixels_ptr = _image.data.pixels.data();
         const GLenum _side_enum = cubemap_enums[_index];
@@ -126,20 +126,20 @@ fetched<cubemap> fetch_cubemap(
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
     const std::vector<std::filesystem::path> _image_paths = _resolve_image_paths(data_paths, etc2_paths, s3tc_paths);
-    std::shared_ptr<std::promise<std::array<image, 6>>> _images_promise = std::make_shared<std::promise<std::array<image, 6>>>();
+    std::shared_ptr<std::promise<std::array<detail::image_implementation, 6>>> _images_promise = std::make_shared<std::promise<std::array<detail::image_implementation, 6>>>();
     _fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {
-        std::array<image, 6> _images = {
-            image(_data_bytes[0]),
-            image(_data_bytes[1]),
-            image(_data_bytes[2]),
-            image(_data_bytes[3]),
-            image(_data_bytes[4]),
-            image(_data_bytes[5])
+        std::array<detail::image_implementation, 6> _images = {
+            detail::image_implementation(_data_bytes[0]),
+            detail::image_implementation(_data_bytes[1]),
+            detail::image_implementation(_data_bytes[2]),
+            detail::image_implementation(_data_bytes[3]),
+            detail::image_implementation(_data_bytes[4]),
+            detail::image_implementation(_data_bytes[5])
         };
         _images_promise->set_value(std::move(_images)); }, true);
 
     // create cubemap on main thread
-    return fetched<cubemap>(_images_promise->get_future(), [](const std::array<image, 6>& _from) {
+    return fetched<cubemap>(_images_promise->get_future(), [](const std::array<detail::image_implementation, 6>& _from) {
         return cubemap(_from);
     });
 }

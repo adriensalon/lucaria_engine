@@ -15,7 +15,7 @@ struct cubemap {
 
     /// @brief Creates a cubemap from images synchronously
     /// @param images the images to create from
-    cubemap(const std::array<image, 6>& images);
+    cubemap(const std::array<detail::image_implementation, 6>& images);
 
     /// @brief Returns a handle to the underlying implementation
     /// @return the underlying implementation handle
