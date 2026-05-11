@@ -1,4 +1,4 @@
-# lucaria game engine
+# lucaria_engine
 
 Minimal CMake/C++17 game engine and toolchain made to run my gamedev/music portfolio at [777reroll.fr](https://777reroll.fr). It compiles to Win32, Android and Emscripten without specific configuration.
 
