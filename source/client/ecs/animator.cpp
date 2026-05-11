@@ -126,6 +126,9 @@ animator_component& animator_component::use_event_track(const std::string name, 
 animator_component& animator_component::use_skeleton(skeleton& from)
 {
     _skeleton.emplace(from);
+    const int _num_joints = _skeleton.value().get_handle().num_joints();
+	const int _num_soa_joints = _skeleton.value().get_handle().num_soa_joints();
+
     for (const std::pair<const std::string, _detail::fetched_container<animation>>& _pair : _animations) {
         if (_pair.second.has_value()) {
 #if LUCARIA_CONFIG_DEBUG
@@ -135,13 +138,12 @@ animator_component& animator_component::use_skeleton(skeleton& from)
                 LUCARIA_RUNTIME_ERROR("Incompatible animation with " + std::to_string(_animation_tracks) + " tracks and skeleton with " + std::to_string(_skeleton_joints) + " joints")
             }
 #endif
-            _local_transforms[_pair.first].resize(_skeleton.value().get_handle().num_soa_joints());
+            _local_transforms[_pair.first].resize(_num_soa_joints);
         }
     }
-    const int _num_joints = _skeleton.value().get_handle().num_joints();
     _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
     _sampling_context->Resize(_num_joints);
-    _blended_local_transforms.resize(_num_joints);
+    _blended_local_transforms.resize(_num_soa_joints);
     _model_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
     return *this;
 }
@@ -149,6 +151,9 @@ animator_component& animator_component::use_skeleton(skeleton& from)
 animator_component& animator_component::use_skeleton(fetched<skeleton>& from)
 {
     _skeleton.emplace(from, [this]() {
+		const int _num_joints = _skeleton.value().get_handle().num_joints();
+		const int _num_soa_joints = _skeleton.value().get_handle().num_soa_joints();
+		
         for (const std::pair<const std::string, _detail::fetched_container<animation>>& _pair : _animations) {
             if (_pair.second.has_value()) {
 #if LUCARIA_CONFIG_DEBUG
@@ -158,13 +163,12 @@ animator_component& animator_component::use_skeleton(fetched<skeleton>& from)
                     LUCARIA_RUNTIME_ERROR("Incompatible animation with " + std::to_string(_animation_tracks) + " tracks and skeleton with " + std::to_string(_skeleton_joints) + " joints")
                 }
 #endif
-                _local_transforms[_pair.first].resize(_skeleton.value().get_handle().num_soa_joints());
+                _local_transforms[_pair.first].resize(_num_soa_joints);
             }
         }
-        const int _num_joints = _skeleton.value().get_handle().num_joints();
         _sampling_context = std::make_unique<ozz::animation::SamplingJob::Context>();
         _sampling_context->Resize(_num_joints);
-        _blended_local_transforms.resize(_num_joints);
+        _blended_local_transforms.resize(_num_soa_joints);
         _model_transforms.resize(_num_joints, ozz::math::Float4x4::identity());
     });
 

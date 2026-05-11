@@ -28,6 +28,7 @@
 namespace lucaria {
 
 void _system_compute_rendering();
+void _system_apply_camera_rotation();
 #if LUCARIA_CONFIG_DEBUG
 void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 #endif
@@ -95,7 +96,7 @@ namespace {
     };
 #endif
 
-    constexpr glm::float32 mouse_sensitivity = 0.15f;
+    constexpr glm::float32 mouse_sensitivity = 0.05f;
     constexpr glm::float32 player_speed = 1.f;
     static glm::vec3 player_position = { 0.f, 1.8f, 3.f };
     static glm::vec3 player_forward = { 0.f, 0.f, -1.f };
@@ -590,68 +591,75 @@ struct rendering_system {
         camera_projection = glm::perspective(_fov_rad, _aspect_ratio, camera_near, camera_far);
     }
 
+    static glm::quat extract_world_rotation(const glm::mat4& transform)
+    {
+        // Orthonormalize rotation part to avoid skew before converting to a quaternion.
+        glm::mat3 rotation = glm::mat3(transform);
+        rotation[0] = glm::normalize(rotation[0]);
+        rotation[2] = glm::normalize(glm::cross(rotation[0], glm::normalize(rotation[1])));
+        rotation[1] = glm::normalize(glm::cross(rotation[2], rotation[0]));
+        return glm::quat_cast(glm::mat4(rotation));
+    }
+
+    static void apply_camera_rotation()
+    {
+        if (!get_is_game_locked() || !_follow) {
+            return;
+        }
+
+        const glm::vec2 _mouse_delta = glm::vec2(_camera_yaw, _camera_pitch);
+        if (_mouse_delta == glm::vec2(0.f)) {
+            return;
+        }
+
+        // Consume this frame's camera input before motion/physics run.
+        const float _yaw_delta_degrees = -_mouse_delta.x * mouse_sensitivity;
+        player_pitch -= _mouse_delta.y * mouse_sensitivity;
+        player_pitch = glm::clamp(player_pitch, -89.f, 89.f);
+        _camera_yaw = 0.f;
+        _camera_pitch = 0.f;
+
+        const glm::mat4 followW0 = _follow->_transform;
+        const glm::quat qFollow0 = extract_world_rotation(followW0);
+
+        // Rotate the model by yaw delta around its own up axis.
+        const glm::vec3 charUp = glm::normalize(qFollow0 * glm::vec3(0, 1, 0));
+        const glm::quat qYawDelta = glm::angleAxis(glm::radians(_yaw_delta_degrees), charUp);
+        const glm::quat qFollow1 = glm::normalize(qYawDelta * qFollow0);
+
+        // Preserve translation. This assumes unit scale, same as the previous code.
+        glm::mat4 followW1 = glm::mat4_cast(qFollow1);
+        followW1[3] = followW0[3];
+        _follow->set_transform_warp(followW1);
+
+    }
+
     static void compute_view_projection()
     {
         if (get_is_game_locked() && _follow && _follow_animator && !_follow_bone_name.empty()) {
-
-            const glm::vec2 _mouse_delta = glm::vec2(_camera_yaw, _camera_pitch);
-
-            // ---- INPUT: use delta yaw to rotate the MODEL; accumulate only pitch for camera
-            const float _yaw_delta_degrees = -_mouse_delta.x * mouse_sensitivity; // flip if you prefer
-            player_pitch -= _mouse_delta.y * mouse_sensitivity;
-            player_pitch = glm::clamp(player_pitch, -89.f, 89.f);
-            _camera_yaw = 0.f;
-            _camera_pitch = 0.f;
-
-            // ---- EXTRACT CURRENT WORLD ROTATION (handles external rotations)
-            const glm::mat4 followW0 = _follow->_transform;
-
-            // Orthonormalize rotation part to avoid skew
-            glm::mat3 R0 = glm::mat3(followW0);
-            R0[0] = glm::normalize(R0[0]);
-            R0[2] = glm::normalize(glm::cross(R0[0], glm::normalize(R0[1])));
-            R0[1] = glm::normalize(glm::cross(R0[2], R0[0]));
-            glm::quat qFollow0 = glm::quat_cast(glm::mat4(R0));
-
-            // ---- ROTATE THE MODEL BY yawDelta AROUND ITS OWN UP AXIS
-            const glm::vec3 charUp = glm::normalize(qFollow0 * glm::vec3(0, 1, 0));
-            const glm::quat qYawDelta = glm::angleAxis(glm::radians(_yaw_delta_degrees), charUp);
-
-            glm::quat qFollow1 = glm::normalize(qYawDelta * qFollow0);
-
-            // Write back to transform (preserve translation; assuming unit scale)
-            glm::mat4 followW1 = glm::mat4_cast(qFollow1);
-            followW1[3] = followW0[3];
-            _follow->set_transform_warp(followW1);
-
-            // ---- RECOMPUTE after applying yaw to the model
             const glm::mat4 followW = _follow->_transform;
-            glm::quat qFollow = qFollow1; // already up-to-date
+            const glm::quat qFollow = extract_world_rotation(followW);
 
-            // Camera directions: pitch only relative to character forward
+            // Camera directions: pitch only relative to character forward.
             const glm::vec3 camF_local = forward_from_yaw_pitch(0.f, player_pitch);
-            const glm::vec3 flatF_local = forward_from_yaw_pitch(0.f, 0.f); // (0,0,+1)
+            const glm::vec3 flatF_local = forward_from_yaw_pitch(0.f, 0.f);
 
             const glm::vec3 camForward = glm::normalize(qFollow * camF_local);
             const glm::vec3 groundF = glm::normalize(qFollow * flatF_local);
 
-            // Basis (keep horizon level)
+            // Basis (keep horizon level).
             const glm::vec3 worldUp = { 0, 1, 0 };
             glm::vec3 camRight, camUp;
             camera_basis_from_forward(camForward, worldUp, camRight, camUp);
 
-            // Bone world pos
+            // Bone world pos. This is intentionally evaluated after mixer/animation.
             const glm::mat4 boneLocal = _follow_animator->get_bone_transform(_follow_bone_name);
             const glm::vec3 boneWorld = glm::vec3((followW * boneLocal)[3]);
+			// const glm::vec3 boneWorld = glm::vec3(followW[3]);
 
-            // // Boom offset: behind character along ground heading
-            // const float boomDist = show_physics_guizmos ? 1.f : -0.23f; // distance behind
-            // // const float boomDist = 1.53f; // distance behind
-            // const float camHeight = show_physics_guizmos ? 1.f : 0.f; // tweak if needed
-            // Boom offset: behind character along ground heading
-            const float boomDist = -0.23f; // distance behind
-            // const float boomDist = 1.53f; // distance behind
-            const float camHeight = 0.f; // tweak if needed
+
+            const float boomDist = -0.23f;
+            const float camHeight = 0.f;
 
             player_position = boneWorld - groundF * boomDist + worldUp * camHeight;
             camera_view = glm::lookAt(player_position, player_position + camForward, camUp);
@@ -1014,6 +1022,11 @@ struct rendering_system {
 #endif
     }
 };
+
+void _system_apply_camera_rotation()
+{
+    rendering_system::apply_camera_rotation();
+}
 
 void _system_compute_rendering()
 {

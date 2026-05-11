@@ -60,6 +60,7 @@ extern void _system_compute_mixer();
 extern void _system_guizmos_motion();
 extern void _system_guizmos_dynamics();
 extern void _system_compute_rendering();
+extern void _system_apply_camera_rotation();
 
 #if LUCARIA_PLATFORM_ANDROID
 android_app* g_app = nullptr;
@@ -709,8 +710,13 @@ namespace {
 #endif
         ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
 
+		
         // update
         update_callback();
+
+        // Consume camera rotation before motion/physics so gameplay systems see
+        // this frame's player orientation instead of the previous frame's.
+        _system_apply_camera_rotation();
 
         _system_compute_motion();
         _system_compute_dynamics();
@@ -944,7 +950,7 @@ int main(int argc, char** argv)
     glfwMakeContextCurrent(lucaria::glfw_window);
     glfwSetWindowFocusCallback(lucaria::glfw_window, lucaria::glfw_window_focus_callback);
     gladLoadGL(glfwGetProcAddress);
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
     lucaria::setup_opengl();
     lucaria::setup_imgui();
     lucaria::is_audio_locked = lucaria::setup_openal();
