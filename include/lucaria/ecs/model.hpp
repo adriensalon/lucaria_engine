@@ -47,20 +47,16 @@ struct unlit_model_component {
     /// @param from 
     /// @return 
     unlit_model_component& use_mesh(fetched<mesh>& from);
-
-    /// @brief 
-    /// @param from 
-    /// @return 
-    unlit_model_component& use_color(texture& from);
-
-    /// @brief 
-    /// @param from 
-    /// @return 
-    unlit_model_component& use_color(fetched<texture>& from);
+    
+	unlit_model_component& use_color(texture_object& color)
+	{
+		_color = color;
+		return *this;
+	}
 
 private:
     _detail::fetched_container<mesh> _mesh = {};
-    _detail::fetched_container<texture> _color = {};
+    texture_object _color = {};
     friend struct motion_system;
     friend struct rendering_system;
 };

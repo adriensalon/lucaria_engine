@@ -22,7 +22,7 @@ struct framebuffer {
 
     /// @brief Binds a texture object for the color attachment of this framebuffer
     /// @param color the texture object to bind
-    void bind_color(texture& color);
+    void bind_color(const texture_object color);
 
     /// @brief Binds a renderbuffer object for the color attachment of this framebuffer
     /// @param color the renderbuffer object to bind
@@ -30,7 +30,7 @@ struct framebuffer {
 
     /// @brief Binds a texture object for the depth attachment of this framebuffer
     /// @param depth the texture object to bind
-    void bind_depth(texture& depth);
+    void bind_depth(detail::texture_cell& depth);
 
     /// @brief Binds a renderbuffer object for the depth attachment of this framebuffer
     /// @param depth the renderbuffer object to bind

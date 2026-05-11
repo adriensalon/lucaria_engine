@@ -18,6 +18,14 @@ namespace lucaria {
 template <typename FetchedType>
 struct fetched {
 
+	fetched() = default;
+
+    fetched(FetchedType&& value)
+        : _cache(std::move(value))
+        , _callbacks_invoked(true)
+    {
+    }
+
     /// @brief Creates a fetched object from an existing std::future<FetchedType>
     /// @param future the future to create from
     fetched(std::future<FetchedType>&& future)
@@ -61,12 +69,14 @@ struct fetched {
     [[nodiscard]] bool has_value() const
     {
         if (_cache) {
+			_invoke_callbacks_once();
             return true;
         }
         if (_poll && _poll()) {
             _cache = std::move(_get());
             _poll = nullptr;
             _get = nullptr;
+			_invoke_callbacks_once();
             return true;
         }
         return false;
@@ -94,6 +104,23 @@ struct fetched {
         return _cache.value();
     }
 
+	void on_ready(std::function<void(FetchedType&)> callback) const
+    {
+        if (has_value()) {
+            callback(_cache.value());
+            return;
+        }
+
+        _callbacks.emplace_back(std::move(callback));
+    }
+
+    void on_ready(std::function<void()> callback) const
+    {
+        on_ready([callback = std::move(callback)](FetchedType&) {
+            callback();
+        });
+    }
+
     /// @brief Conversion operator for the has_value member function
     [[nodiscard]] explicit operator bool() const
     {
@@ -101,9 +128,24 @@ struct fetched {
     }
 
 private:
-    mutable std::function<bool()> _poll;
-    mutable std::function<FetchedType()> _get;
-    mutable std::optional<FetchedType> _cache;
+    mutable std::function<bool()> _poll = nullptr;
+    mutable std::function<FetchedType()> _get = nullptr;
+    mutable std::optional<FetchedType> _cache = std::nullopt;
+    mutable bool _callbacks_invoked = false;
+    mutable std::vector<std::function<void(FetchedType&)>> _callbacks = {};
+
+    void _invoke_callbacks_once() const
+    {
+        if (_callbacks_invoked || !_cache) {
+            return;
+        }
+        _callbacks_invoked = true;
+
+        for (std::function<void(FetchedType&)>& _callback : _callbacks) {
+            _callback(_cache.value());
+        }
+        _callbacks.clear();
+    }
 };
 
 /// @brief

@@ -60,9 +60,9 @@ spatial_interface_component& spatial_interface_component::use_viewport(geometry&
     _viewport_geometry.emplace(from);
     _viewport_mesh = std::make_unique<mesh>(_viewport_geometry.value());
     _viewport_size = size;
-    _imgui_color_texture = std::make_unique<texture>(size);
+    _imgui_color_texture = texture_object::create(size);
     _imgui_framebuffer = std::make_unique<framebuffer>();
-    _imgui_framebuffer->bind_color(*(_imgui_color_texture.get()));
+    _imgui_framebuffer->bind_color(_imgui_color_texture);
     return *this;
 }
 
@@ -73,21 +73,15 @@ spatial_interface_component& spatial_interface_component::use_viewport(fetched<g
         _viewport_mesh = std::make_unique<mesh>(_viewport_geometry.value());
     });
     _viewport_size = size;
-    _imgui_color_texture = std::make_unique<texture>(size);
+    _imgui_color_texture = texture_object::create(size);
     _imgui_framebuffer = std::make_unique<framebuffer>();
-    _imgui_framebuffer->bind_color(*(_imgui_color_texture.get()));
+    _imgui_framebuffer->bind_color(_imgui_color_texture);
     return *this;
 }
 
-spatial_interface_component& spatial_interface_component::use_interaction_texture(texture& from)
+spatial_interface_component& spatial_interface_component::use_interaction_texture(const texture_object texture)
 {
-    _interaction_texture.emplace(from);
-    return *this;
-}
-
-spatial_interface_component& spatial_interface_component::use_interaction_texture(fetched<texture>& from)
-{
-    _interaction_texture.emplace(from);
+    _interaction_texture = texture;
     return *this;
 }
 

@@ -78,14 +78,16 @@ void framebuffer::use()
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 }
 
-void framebuffer::bind_color(texture& color)
+void framebuffer::bind_color(const texture_object color)
 {
-    if (_texture_color_id && _texture_color_id.value() == color.get_handle()) {
+	const glm::uint _texture_handle = color._cell->get().get_handle();
+
+    if (_texture_color_id && _texture_color_id.value() == _texture_handle) {
         return;
     }
 
     const GLenum _attachment = GL_COLOR_ATTACHMENT0;
-    const GLuint _color_id = color.get_handle();
+    const GLuint _color_id = _texture_handle;
     _texture_color_id = _color_id;
     _renderbuffer_color_id = std::nullopt;
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
@@ -116,7 +118,7 @@ void framebuffer::bind_color(renderbuffer& color)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void framebuffer::bind_depth(texture& depth)
+void framebuffer::bind_depth(detail::texture_cell& depth)
 {
     if (_texture_depth_id && _texture_depth_id.value() == depth.get_handle()) {
         return;

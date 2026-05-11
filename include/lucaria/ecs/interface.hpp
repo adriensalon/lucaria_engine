@@ -44,8 +44,7 @@ struct spatial_interface_component {
 
     spatial_interface_component& use_viewport(geometry& from, const glm::uvec2& size);
     spatial_interface_component& use_viewport(fetched<geometry>& from, const glm::uvec2& size);
-    spatial_interface_component& use_interaction_texture(texture& from);
-    spatial_interface_component& use_interaction_texture(fetched<texture>& from);
+    spatial_interface_component& use_interaction_texture(const texture_object texture);
 
     /// @brief Sets an ImGui callback that will be executed on a correct context
     /// @param callback the user callback to use ImGui from
@@ -65,14 +64,14 @@ private:
     bool _use_interaction = false;
     glm::uvec2 _viewport_size = glm::uvec2(0);
     std::optional<glm::vec2> _interaction_screen_position = std::nullopt;
-    _detail::fetched_container<texture> _interaction_texture = {};
+    texture_object _interaction_texture = {};
     _detail::fetched_container<geometry> _viewport_geometry = {};
     std::unique_ptr<mesh> _viewport_mesh = nullptr;
     glm::vec2 _cursor_size = { 10, 10 };
     std::function<void()> _imgui_callback = nullptr;
     std::optional<refresh_mode> _refresh_mode = std::nullopt;
     ImGuiContext* _imgui_context = nullptr;
-    std::unique_ptr<texture> _imgui_color_texture = nullptr;
+    texture_object _imgui_color_texture = {};
     std::unique_ptr<framebuffer> _imgui_framebuffer = nullptr;
     friend struct rendering_system;
 };

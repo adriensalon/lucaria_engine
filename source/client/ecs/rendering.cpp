@@ -122,7 +122,7 @@ namespace {
 
     // post processing
     static std::optional<framebuffer> scene_framebuffer;
-    static std::optional<texture> scene_color_texture;
+    static texture_object scene_color_texture = {};
     static std::optional<renderbuffer> scene_depth_renderbuffer;
 
     // fxaa
@@ -561,10 +561,10 @@ struct rendering_system {
             scene_framebuffer = framebuffer();
         }
         if (!scene_color_texture) {
-            scene_color_texture = texture(_screen_size);
-            scene_framebuffer->bind_color(scene_color_texture.value());
+            scene_color_texture = texture_object::create(_screen_size);
+            scene_framebuffer->bind_color(scene_color_texture);
         } else {
-            scene_color_texture->resize(_screen_size);
+            scene_color_texture.resize(_screen_size);
         }
         if (!scene_depth_renderbuffer) {
             scene_depth_renderbuffer = renderbuffer(_screen_size, GL_DEPTH_COMPONENT24);
@@ -758,12 +758,11 @@ struct rendering_system {
                 if (_model._mesh.has_value() && _model._color.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
-                    const texture& _color = _model._color.value();
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
                     _unlit_program.bind_uniform("uniform_view", _model_view_projection);
-                    _unlit_program.bind_uniform("uniform_color", _color, 0);
+                    _unlit_program.bind_uniform("uniform_color", _model._color, 0);
                     _unlit_program.draw();
                 }
             });
@@ -771,11 +770,10 @@ struct rendering_system {
             scene.view<unlit_model_component>(entt::exclude<transform_component, animator_component>).each([&](unlit_model_component& _model) {
                 if (_model._mesh.has_value() && _model._color.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
-                    const texture& _color = _model._color.value();
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
-                    _unlit_program.bind_uniform("uniform_color", _color, 0);
+                    _unlit_program.bind_uniform("uniform_color", _model._color, 0);
                     _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_program.draw();
                 }
@@ -797,10 +795,11 @@ struct rendering_system {
         program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<unlit_model_component, transform_component, animator_component>().each([&](unlit_model_component& _model, transform_component& _transform, animator_component& animator) {
+                // if (_model._mesh.has_value() && _model._oldcolor.has_value() && animator._skeleton.has_value()) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
                     const mesh& _mesh = _model._mesh.value();
-                    const texture& _color = _model._color.value();
+                    // const detail::texture_cell& _color = _model._oldcolor.value();
                     _unlit_skinned_program.use();
                     _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                     _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -809,7 +808,8 @@ struct rendering_system {
                     _unlit_skinned_program.bind_uniform("uniform_view", _model_view_projection);
                     _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
                     _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
-                    _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
+                    // _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
+                    _unlit_skinned_program.bind_uniform("uniform_color", _model._color, 0);
                     _unlit_skinned_program.draw();
                 }
             });
@@ -817,7 +817,6 @@ struct rendering_system {
             scene.view<unlit_model_component, animator_component>(entt::exclude<transform_component>).each([&](unlit_model_component& _model, animator_component& animator) {
                 if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
                     const mesh& _mesh = _model._mesh.value();
-                    const texture& _color = _model._color.value();
                     _unlit_skinned_program.use();
                     _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
                     _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
@@ -826,7 +825,7 @@ struct rendering_system {
                     _unlit_skinned_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
                     _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
-                    _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
+                    _unlit_skinned_program.bind_uniform("uniform_color", _model._color, 0);
                     _unlit_skinned_program.draw();
                 }
             });
@@ -870,7 +869,7 @@ struct rendering_system {
                     interface._imgui_callback();
 
                     if (interface._use_interaction && interface._interaction_texture.has_value()) {
-                        const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture.value().get_handle()));
+                        const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture._cell->get().get_handle()));
                         if (_raycasted_uvs) {
                             const ImVec2 _cursor_min(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
                             const ImVec2 _cursor_max(
@@ -891,7 +890,7 @@ struct rendering_system {
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", *interface._viewport_mesh.get(), mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", *interface._viewport_mesh.get(), mesh_attribute::texcoord);
-                    _unlit_program.bind_uniform("uniform_color", *(interface._imgui_color_texture.get()), 0);
+                    _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture, 0);
                     _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_program.draw();
 
@@ -959,7 +958,7 @@ struct rendering_system {
 
         _post_processing_program.use();
         _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, mesh_attribute::position);
-        _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value(), 0);
+        _post_processing_program.bind_uniform("uniform_color", scene_color_texture, 0);
         _post_processing_program.bind_uniform("uniform_texel_size", 1.f / glm::vec2(get_screen_size()));
 
         // fxaa

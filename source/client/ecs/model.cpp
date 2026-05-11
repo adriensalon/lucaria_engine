@@ -26,16 +26,4 @@ unlit_model_component& unlit_model_component::use_mesh(fetched<mesh>& from)
     return *this;
 }
 
-unlit_model_component& unlit_model_component::use_color(texture& from)
-{
-    _color.emplace(from);
-    return *this;
-}
-
-unlit_model_component& unlit_model_component::use_color(fetched<texture>& from)
-{
-    _color.emplace(from);
-    return *this;
-}
-
 }

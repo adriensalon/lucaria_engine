@@ -224,12 +224,20 @@ void program::bind_uniform(const std::string& name, const cubemap& from, const g
     glBindTexture(GL_TEXTURE_CUBE_MAP, from.get_handle());
 }
 
-void program::bind_uniform(const std::string& name, const texture& from, const glm::uint slot) const
+// void program::bind_uniform(const std::string& name, const detail::texture_cell& from, const glm::uint slot) const
+// {
+//     glm::int32 _location = _uniforms.at(name);
+//     glUniform1i(_location, slot);
+//     glActiveTexture(GL_TEXTURE0 + slot);
+//     glBindTexture(GL_TEXTURE_2D, from.get_handle());
+// }
+
+void program::bind_uniform(const std::string& name, const texture_object texture, const glm::uint slot) const
 {
-    glm::int32 _location = _uniforms.at(name);
-    glUniform1i(_location, slot);
-    glActiveTexture(GL_TEXTURE0 + slot);
-    glBindTexture(GL_TEXTURE_2D, from.get_handle());
+	glm::int32 _location = _uniforms.at(name);
+	glUniform1i(_location, slot);
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(GL_TEXTURE_2D, texture._cell->get().get_handle());
 }
 
 template <>

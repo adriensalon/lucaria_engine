@@ -46,7 +46,10 @@ struct program {
     /// @param name source name of the uniform
     /// @param from texture to bind from
     /// @param slot texture slot to use
-    void bind_uniform(const std::string& name, const texture& from, const glm::uint slot = 0) const;
+    // void bind_uniform(const std::string& name, const detail::texture_cell& from, const glm::uint slot = 0) const;
+    
+
+	void bind_uniform(const std::string& name, const texture_object texture, const glm::uint slot = 0) const;
 
     /// @brief Uses a uniform buffer for draw calls
     /// @tparam value_t type of the uniform data
