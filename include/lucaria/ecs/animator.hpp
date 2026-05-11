@@ -85,7 +85,7 @@ struct animator_component {
     /// @param name
     /// @param from
     /// @return this instance for chaining methods
-    animator_component& use_animation(const std::string name, fetched<animation>& from);
+    animator_component& use_animation(const std::string name, detail::async_container<animation>& from);
 
     /// @brief
     /// @param name
@@ -97,7 +97,7 @@ struct animator_component {
     /// @param name
     /// @param from
     /// @return this instance for chaining methods
-    animator_component& use_motion_track(const std::string name, fetched<animation_motion_track>& from);
+    animator_component& use_motion_track(const std::string name, detail::async_container<animation_motion_track>& from);
 
     /// @brief
     /// @param name
@@ -109,7 +109,7 @@ struct animator_component {
     /// @param name
     /// @param from
     /// @return this instance for chaining methods
-    animator_component& use_event_track(const std::string name, fetched<animation_event_track>& from);
+    animator_component& use_event_track(const std::string name, detail::async_container<animation_event_track>& from);
 
     /// @brief
     /// @param from
@@ -119,7 +119,7 @@ struct animator_component {
     /// @brief
     /// @param from
     /// @return this instance for chaining methods
-    animator_component& use_skeleton(fetched<skeleton>& from);
+    animator_component& use_skeleton(detail::async_container<skeleton>& from);
 
     // animator_component& use_inverse_kinematics_chain(const std::string name, const std::string& start, const std::string& end);
     // animator_component& use_inverse_kinematics_snap(const std::string name, const glm::vec3& end_position);
@@ -135,10 +135,10 @@ struct animator_component {
     [[nodiscard]] glm::mat4 get_bone_transform(const std::string& bone);
 
 private:
-    _detail::fetched_container<skeleton> _skeleton = {};
-    std::unordered_map<std::string, _detail::fetched_container<animation>> _animations = {};
-    std::unordered_map<std::string, _detail::fetched_container<animation_motion_track>> _motion_tracks = {};
-    std::unordered_map<std::string, _detail::fetched_container<animation_event_track>> _event_tracks = {};
+    _detail::OLDfetched_container<skeleton> _skeleton = {};
+    std::unordered_map<std::string, _detail::OLDfetched_container<animation>> _animations = {};
+    std::unordered_map<std::string, _detail::OLDfetched_container<animation_motion_track>> _motion_tracks = {};
+    std::unordered_map<std::string, _detail::OLDfetched_container<animation_event_track>> _event_tracks = {};
     std::unordered_map<std::string, std::vector<std::reference_wrapper<transform_component>>> _children_transforms = {};
     std::unordered_map<std::string, animation_controller> _controllers = {};
     std::unordered_map<std::string, ozz::vector<ozz::math::SoaTransform>> _local_transforms = {};

@@ -32,7 +32,7 @@ passive_rigidbody_component& passive_rigidbody_component::use_shape(shape& from)
     return *this;
 }
 
-passive_rigidbody_component& passive_rigidbody_component::use_shape(fetched<shape>& from)
+passive_rigidbody_component& passive_rigidbody_component::use_shape(detail::async_container<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -97,7 +97,7 @@ kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(shape& f
     return *this;
 }
 
-kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(fetched<shape>& from)
+kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(detail::async_container<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();
@@ -172,7 +172,7 @@ dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(shape& from)
     return *this;
 }
 
-dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(fetched<shape>& from)
+dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(detail::async_container<shape>& from)
 {
     _shape.emplace(from, [this]() {
         btCollisionShape* _collision_shape = _shape.value().get_handle();

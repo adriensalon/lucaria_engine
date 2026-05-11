@@ -66,7 +66,7 @@ spatial_interface_component& spatial_interface_component::use_viewport(geometry&
     return *this;
 }
 
-spatial_interface_component& spatial_interface_component::use_viewport(fetched<geometry>& from, const glm::uvec2& size)
+spatial_interface_component& spatial_interface_component::use_viewport(detail::async_container<geometry>& from, const glm::uvec2& size)
 {
     _viewport_geometry.emplace(from, [this]() {
         invert_texcoords(_viewport_geometry.value().data.texcoords);

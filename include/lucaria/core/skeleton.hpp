@@ -37,6 +37,6 @@ private:
 
 /// @brief Loads a skeleton from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<skeleton> fetch_skeleton(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<skeleton> fetch_skeleton(const std::filesystem::path& data_path);
 
 }

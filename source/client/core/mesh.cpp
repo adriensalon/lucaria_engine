@@ -227,7 +227,7 @@ const std::vector<glm::mat4>& mesh::get_invposes() const
     return _invposes;
 }
 
-fetched<mesh> fetch_mesh(const std::filesystem::path& data_path)
+detail::async_container<mesh> fetch_mesh(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<geometry>> _geometry_promise = std::make_shared<std::promise<geometry>>();
     _fetch_bytes(data_path, [_geometry_promise](const std::vector<char>& _data_bytes) {
@@ -236,7 +236,7 @@ fetched<mesh> fetch_mesh(const std::filesystem::path& data_path)
     }, true);
 
     // create mesh on main thread
-    return fetched<mesh>(_geometry_promise->get_future(), [](const geometry& _from) {
+    return detail::async_container<mesh>(_geometry_promise->get_future(), [](const geometry& _from) {
         return mesh(_from);
     });
 }

@@ -9,7 +9,8 @@ namespace lucaria {
 namespace detail {
 
 struct asset_database {
-    texture_manager textures;
+	image_manager images = {};
+    texture_manager textures = {};
     // mesh_manager meshes;
     // skeleton_manager skeletons;
     // animation_manager animations;

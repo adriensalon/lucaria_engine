@@ -94,14 +94,14 @@ struct animation_event_track {
 
 /// @brief Loads an animation from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<animation> fetch_animation(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<animation> fetch_animation(const std::filesystem::path& data_path);
 
 /// @brief Loads a motion track from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<animation_motion_track> fetch_motion_track(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<animation_motion_track> fetch_motion_track(const std::filesystem::path& data_path);
 
 /// @brief Loads an event track from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<animation_event_track> fetch_event_track(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<animation_event_track> fetch_event_track(const std::filesystem::path& data_path);
 
 }

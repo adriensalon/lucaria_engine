@@ -9,9 +9,9 @@
 
 namespace lucaria {
 namespace detail {
-	
+
     template <typename CellType>
-    struct resource_cell {
+    struct resource_container {
 
         [[nodiscard]] bool is_ready() const
         {
@@ -28,7 +28,7 @@ namespace detail {
             return _current_version.load(std::memory_order_acquire);
         }
 
-        void set(fetched<CellType>&& next_value, const std::optional<std::filesystem::path>& origin_path = std::nullopt)
+        void set(async_container<CellType>&& next_value, const std::optional<std::filesystem::path>& origin_path = std::nullopt)
         {
             std::lock_guard lock(_set_mutex);
             _fetched = std::move(next_value);
@@ -60,7 +60,7 @@ namespace detail {
         }
 
     private:
-        fetched<CellType> _fetched = {};
+        async_container<CellType> _fetched = {};
         std::optional<std::filesystem::path> _origin_path = {};
         std::atomic<std::uint32_t> _current_version = { 0 };
         std::mutex _set_mutex = {};
@@ -69,34 +69,34 @@ namespace detail {
     template <typename CellType>
     struct resource_manager {
 
-        resource_cell<CellType>* create_cell()
+        resource_container<CellType>* create_cell()
         {
-            std::unique_ptr<resource_cell<CellType>> _cell = std::make_unique<resource_cell<CellType>>();
-            resource_cell<CellType>* _raw_cell = _cell.get();
+            std::unique_ptr<resource_container<CellType>> _cell = std::make_unique<resource_container<CellType>>();
+            resource_container<CellType>* _raw_cell = _cell.get();
             _cells.emplace_back(std::move(_cell));
             return _raw_cell;
         }
 
-        resource_cell<CellType>* create_cell(fetched<CellType>&& value, std::optional<std::filesystem::path> origin_path = std::nullopt)
+        resource_container<CellType>* create_cell(async_container<CellType>&& value, std::optional<std::filesystem::path> origin_path = std::nullopt)
         {
-            resource_cell<CellType>* _cell = create_cell();
+            resource_container<CellType>* _cell = create_cell();
             _cell->set(std::move(value), std::move(origin_path));
             return _cell;
         }
 
-        [[nodiscard]] resource_cell<CellType>* find_by_path(const std::filesystem::path& path) const
+        [[nodiscard]] resource_container<CellType>* find_by_path(const std::filesystem::path& path) const
         {
             auto _it = _cells_by_path.find(path);
             return _it == _cells_by_path.end() ? nullptr : _it->second;
         }
 
-        [[nodiscard]] resource_cell<CellType>* get_or_create_by_path(const std::filesystem::path& path, std::function<fetched<CellType>()> create_fetch)
+        [[nodiscard]] resource_container<CellType>* get_or_create_by_path(const std::filesystem::path& path, std::function<async_container<CellType>()> create_fetch)
         {
-            if (resource_cell<CellType>* _existing = find_by_path(path)) {
+            if (resource_container<CellType>* _existing = find_by_path(path)) {
                 return _existing;
             }
 
-            resource_cell<CellType>* _cell = create_cell();
+            resource_container<CellType>* _cell = create_cell();
             _cell->set(create_fetch(), path);
             _cells_by_path.emplace(path, _cell);
 
@@ -110,8 +110,8 @@ namespace detail {
         }
 
     private:
-        std::vector<std::unique_ptr<resource_cell<CellType>>> _cells;
-        std::unordered_map<std::filesystem::path, resource_cell<CellType>*> _cells_by_path;
+        std::vector<std::unique_ptr<resource_container<CellType>>> _cells;
+        std::unordered_map<std::filesystem::path, resource_container<CellType>*> _cells_by_path;
     };
 }
 }

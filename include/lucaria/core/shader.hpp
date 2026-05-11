@@ -40,6 +40,6 @@ struct shader {
 
 /// @brief Loads a shader from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<shader> fetch_shader(const std::filesystem::path data_path);
+[[nodiscard]] detail::async_container<shader> fetch_shader(const std::filesystem::path data_path);
 
 }

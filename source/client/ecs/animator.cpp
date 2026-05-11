@@ -69,7 +69,7 @@ animator_component& animator_component::use_animation(const std::string name, an
     return *this;
 }
 
-animator_component& animator_component::use_animation(const std::string name, fetched<animation>& from)
+animator_component& animator_component::use_animation(const std::string name, detail::async_container<animation>& from)
 {
     _animations[name].emplace(from, [this, name]() {
         if (_skeleton.has_value()) {
@@ -96,7 +96,7 @@ animator_component& animator_component::use_motion_track(const std::string name,
     return *this;
 }
 
-animator_component& animator_component::use_motion_track(const std::string name, fetched<animation_motion_track>& from)
+animator_component& animator_component::use_motion_track(const std::string name, detail::async_container<animation_motion_track>& from)
 {
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace motion track because animation does not exist with this name")
@@ -114,7 +114,7 @@ animator_component& animator_component::use_event_track(const std::string name, 
     return *this;
 }
 
-animator_component& animator_component::use_event_track(const std::string name, fetched<animation_event_track>& from)
+animator_component& animator_component::use_event_track(const std::string name, detail::async_container<animation_event_track>& from)
 {
     if (_animations.find(name) == _animations.end()) {
         LUCARIA_RUNTIME_ERROR("Impossible to emplace event track because animation does not exist with this name")
@@ -129,7 +129,7 @@ animator_component& animator_component::use_skeleton(skeleton& from)
     const int _num_joints = _skeleton.value().get_handle().num_joints();
 	const int _num_soa_joints = _skeleton.value().get_handle().num_soa_joints();
 
-    for (const std::pair<const std::string, _detail::fetched_container<animation>>& _pair : _animations) {
+    for (const std::pair<const std::string, _detail::OLDfetched_container<animation>>& _pair : _animations) {
         if (_pair.second.has_value()) {
 #if LUCARIA_CONFIG_DEBUG
             const int _animation_tracks = _pair.second.value().get_handle().num_tracks();
@@ -148,13 +148,13 @@ animator_component& animator_component::use_skeleton(skeleton& from)
     return *this;
 }
 
-animator_component& animator_component::use_skeleton(fetched<skeleton>& from)
+animator_component& animator_component::use_skeleton(detail::async_container<skeleton>& from)
 {
     _skeleton.emplace(from, [this]() {
 		const int _num_joints = _skeleton.value().get_handle().num_joints();
 		const int _num_soa_joints = _skeleton.value().get_handle().num_soa_joints();
 		
-        for (const std::pair<const std::string, _detail::fetched_container<animation>>& _pair : _animations) {
+        for (const std::pair<const std::string, _detail::OLDfetched_container<animation>>& _pair : _animations) {
             if (_pair.second.has_value()) {
 #if LUCARIA_CONFIG_DEBUG
                 const int _animation_tracks = _pair.second.value().get_handle().num_tracks();

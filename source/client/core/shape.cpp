@@ -106,7 +106,7 @@ shape shape::create_cone(const glm::float32 radius, const glm::float32 height)
         height * 0.5f);
 }
 
-fetched<shape> fetch_shape(const std::filesystem::path& data_path, const shape_algorithm algorithm)
+detail::async_container<shape> fetch_shape(const std::filesystem::path& data_path, const shape_algorithm algorithm)
 {
     std::shared_ptr<std::promise<shape>> _promise = std::make_shared<std::promise<shape>>();
     _fetch_bytes(data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
@@ -115,7 +115,7 @@ fetched<shape> fetch_shape(const std::filesystem::path& data_path, const shape_a
         _promise->set_value(std::move(_shape)); }, true);
 
     // creating bullet collision shapes on worker thread is safe
-    return fetched<shape>(_promise->get_future());
+    return detail::async_container<shape>(_promise->get_future());
 }
 
 }

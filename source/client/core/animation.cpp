@@ -144,7 +144,7 @@ animation_event_track::animation_event_track(const std::filesystem::path& data_p
     });
 }
 
-fetched<animation> fetch_animation(const std::filesystem::path& data_path)
+detail::async_container<animation> fetch_animation(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<animation>> _promise = std::make_shared<std::promise<animation>>();
     _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
@@ -152,10 +152,10 @@ fetched<animation> fetch_animation(const std::filesystem::path& data_path)
         _promise->set_value(std::move(_animation)); }, true);
 
     // create animation on worker thread is ok
-    return fetched<animation>(_promise->get_future());
+    return detail::async_container<animation>(_promise->get_future());
 }
 
-fetched<animation_motion_track> fetch_motion_track(const std::filesystem::path& data_path)
+detail::async_container<animation_motion_track> fetch_motion_track(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<animation_motion_track>> _promise = std::make_shared<std::promise<animation_motion_track>>();
     _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
@@ -163,10 +163,10 @@ fetched<animation_motion_track> fetch_motion_track(const std::filesystem::path& 
         _promise->set_value(std::move(_motion_track)); }, true);
 
     // create motion track on worker thread is ok
-    return fetched<animation_motion_track>(_promise->get_future());
+    return detail::async_container<animation_motion_track>(_promise->get_future());
 }
 
-fetched<animation_event_track> fetch_event_track(const std::filesystem::path& data_path)
+detail::async_container<animation_event_track> fetch_event_track(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<animation_event_track>> _promise = std::make_shared<std::promise<animation_event_track>>();
     _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
@@ -174,7 +174,7 @@ fetched<animation_event_track> fetch_event_track(const std::filesystem::path& da
         _promise->set_value(std::move(_event_track)); }, true);
 
     // create event track on worker thread is ok
-    return fetched<animation_event_track>(_promise->get_future());
+    return detail::async_container<animation_event_track>(_promise->get_future());
 }
 
 }

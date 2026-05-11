@@ -41,6 +41,6 @@ private:
 /// @brief Loads a font from a file asynchronously
 /// @param data_path path to load from
 /// @param font_size imgui size of the font
-[[nodiscard]] fetched<font> fetch_font(const std::filesystem::path& data_path, const glm::float32 font_size);
+[[nodiscard]] detail::async_container<font> fetch_font(const std::filesystem::path& data_path, const glm::float32 font_size);
 
 }

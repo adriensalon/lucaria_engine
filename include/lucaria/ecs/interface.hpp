@@ -43,7 +43,7 @@ struct spatial_interface_component {
     ~spatial_interface_component();
 
     spatial_interface_component& use_viewport(geometry& from, const glm::uvec2& size);
-    spatial_interface_component& use_viewport(fetched<geometry>& from, const glm::uvec2& size);
+    spatial_interface_component& use_viewport(detail::async_container<geometry>& from, const glm::uvec2& size);
     spatial_interface_component& use_interaction_texture(const texture_object texture);
 
     /// @brief Sets an ImGui callback that will be executed on a correct context
@@ -65,7 +65,7 @@ private:
     glm::uvec2 _viewport_size = glm::uvec2(0);
     std::optional<glm::vec2> _interaction_screen_position = std::nullopt;
     texture_object _interaction_texture = {};
-    _detail::fetched_container<geometry> _viewport_geometry = {};
+    _detail::OLDfetched_container<geometry> _viewport_geometry = {};
     std::unique_ptr<mesh> _viewport_mesh = nullptr;
     glm::vec2 _cursor_size = { 10, 10 };
     std::function<void()> _imgui_callback = nullptr;

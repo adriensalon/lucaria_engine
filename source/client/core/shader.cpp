@@ -40,14 +40,14 @@ shader::shader(const std::filesystem::path& data_path)
     });
 }
 
-fetched<shader> fetch_shader(const std::filesystem::path data_path)
+detail::async_container<shader> fetch_shader(const std::filesystem::path data_path)
 {
     std::shared_ptr<std::promise<shader>> _promise = std::make_shared<std::promise<shader>>();
     _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
         shader _shader(_data_bytes);
         _promise->set_value(std::move(_shader)); }, true);
 
-    return fetched<shader>(_promise->get_future());
+    return detail::async_container<shader>(_promise->get_future());
 }
 
 }

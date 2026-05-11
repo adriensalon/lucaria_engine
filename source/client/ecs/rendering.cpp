@@ -116,7 +116,7 @@ namespace {
     static glm::mat4x4 camera_projection;
     static glm::mat4x4 camera_view;
     static glm::mat4x4 camera_view_projection;
-    static _detail::fetched_container<cubemap> skybox_cubemap = {};
+    static _detail::OLDfetched_container<cubemap> skybox_cubemap = {};
     static glm::float32 _skybox_rotation = 0.f;
     static bool show_free_camera = false;
 
@@ -474,7 +474,7 @@ void use_skybox_cubemap(cubemap& from)
     skybox_cubemap.emplace(from);
 }
 
-void use_skybox_cubemap(fetched<cubemap>& from)
+void use_skybox_cubemap(detail::async_container<cubemap>& from)
 {
     skybox_cubemap.emplace(from);
 }

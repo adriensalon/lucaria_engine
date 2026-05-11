@@ -31,7 +31,7 @@ private:
 /// @param data_paths paths to load uncompressed image versions from
 /// @param etc2_paths paths to load ETC2 compressed image versions from
 /// @param s3tc_paths paths to load S3TC compressed image versions from
-[[nodiscard]] fetched<cubemap> fetch_cubemap(
+[[nodiscard]] detail::async_container<cubemap> fetch_cubemap(
     const std::array<std::filesystem::path, 6>& data_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths = std::nullopt,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths = std::nullopt);

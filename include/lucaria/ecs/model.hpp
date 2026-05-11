@@ -22,10 +22,10 @@ struct blockout_model_component {
     /// @brief 
     /// @param from 
     /// @return 
-    blockout_model_component& use_mesh(fetched<mesh>& from);
+    blockout_model_component& use_mesh(detail::async_container<mesh>& from);
 
 private:
-    _detail::fetched_container<mesh> _mesh = {};
+    _detail::OLDfetched_container<mesh> _mesh = {};
     friend struct motion_system;
     friend struct rendering_system;
 };
@@ -46,7 +46,7 @@ struct unlit_model_component {
     /// @brief 
     /// @param from 
     /// @return 
-    unlit_model_component& use_mesh(fetched<mesh>& from);
+    unlit_model_component& use_mesh(detail::async_container<mesh>& from);
     
 	unlit_model_component& use_color(texture_object& color)
 	{
@@ -55,7 +55,7 @@ struct unlit_model_component {
 	}
 
 private:
-    _detail::fetched_container<mesh> _mesh = {};
+    _detail::OLDfetched_container<mesh> _mesh = {};
     texture_object _color = {};
     friend struct motion_system;
     friend struct rendering_system;

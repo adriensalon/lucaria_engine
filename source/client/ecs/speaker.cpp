@@ -44,7 +44,7 @@ speaker_component& speaker_component::use_sound(sound_track& from)
     return *this;
 }
 
-speaker_component& speaker_component::use_sound(fetched<sound_track>& from)
+speaker_component& speaker_component::use_sound(detail::async_container<sound_track>& from)
 {
     _sound.emplace(from, [this]() {
         _is_playing = false;

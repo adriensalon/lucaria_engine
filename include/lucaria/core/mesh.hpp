@@ -75,7 +75,7 @@ private:
 
 /// @brief Loads geometry from a file asynchronously and uploads directly to the device
 /// @param data_path path to load from
-[[nodiscard]] fetched<mesh> fetch_mesh(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<mesh> fetch_mesh(const std::filesystem::path& data_path);
 
 // Internal definitions
 namespace _detail {

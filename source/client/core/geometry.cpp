@@ -40,14 +40,14 @@ geometry::geometry(const std::filesystem::path& data_path)
     });
 }
 
-fetched<geometry> fetch_geometry(const std::filesystem::path& data_path)
+detail::async_container<geometry> fetch_geometry(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<geometry>> _promise = std::make_shared<std::promise<geometry>>();
     _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
         geometry _geometry(_data_bytes);
         _promise->set_value(std::move(_geometry)); }, true);
 
-    return fetched<geometry>(_promise->get_future());
+    return detail::async_container<geometry>(_promise->get_future());
 }
 
 }

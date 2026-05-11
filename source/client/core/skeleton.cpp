@@ -45,7 +45,7 @@ ozz::animation::Skeleton& skeleton::get_handle()
     return _handle;
 }
 
-fetched<skeleton> fetch_skeleton(const std::filesystem::path& data_path)
+detail::async_container<skeleton> fetch_skeleton(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<skeleton>> _promise = std::make_shared<std::promise<skeleton>>();
     _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
@@ -54,7 +54,7 @@ fetched<skeleton> fetch_skeleton(const std::filesystem::path& data_path)
     }, true);
 
     // create skeleton on worker thread is ok
-    return fetched<skeleton>(_promise->get_future());
+    return detail::async_container<skeleton>(_promise->get_future());
 }
 
 }

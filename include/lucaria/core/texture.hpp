@@ -41,7 +41,7 @@ namespace detail {
         resource_manager<texture_implementation> _resources = {};
     };
 
-    [[nodiscard]] fetched<texture_implementation> fetch_texture_cell_async(
+    [[nodiscard]] async_container<texture_implementation> fetch_texture_cell_async(
 		const std::filesystem::path& path, 
 		const std::optional<std::filesystem::path>& etc2_path, 
 		const std::optional<std::filesystem::path>& s3tc_path);
@@ -93,8 +93,8 @@ struct texture_object {
 	[[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_cell<detail::texture_implementation>* _cell = nullptr;
-    explicit texture_object(detail::resource_cell<detail::texture_implementation>* cell);
+    detail::resource_container<detail::texture_implementation>* _cell = nullptr;
+    explicit texture_object(detail::resource_container<detail::texture_implementation>* cell);
     friend struct program;
     friend struct framebuffer;
     friend struct detail::texture_manager;

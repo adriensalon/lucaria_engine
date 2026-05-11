@@ -113,7 +113,7 @@ struct motion_system {
 
                     // sampling
                     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
-                    for (std::pair<const std::string, _detail::fetched_container<animation>>& _pair : animator._animations) {
+                    for (std::pair<const std::string, _detail::OLDfetched_container<animation>>& _pair : animator._animations) {
                         if (_pair.second.has_value()) {
                             const animation_controller& _controller = animator._controllers[_pair.first];
                             ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
@@ -163,7 +163,7 @@ struct motion_system {
         // apply to transform if no dynamic rigidbody
         each_scene([](entt::registry& scene) {
             scene.view<const animator_component, transform_component>(entt::exclude<dynamic_rigidbody_component>).each([](const animator_component& _animator, transform_component& _transform) {
-                for (const std::pair<const std::string, _detail::fetched_container<animation_motion_track>>& _pair : _animator._motion_tracks) {
+                for (const std::pair<const std::string, _detail::OLDfetched_container<animation_motion_track>>& _pair : _animator._motion_tracks) {
                     if (_pair.second.has_value()) {
                         const animation_controller& _controller = _animator._controllers.at(_pair.first);
                         if (_controller._weight > 0.f) {
@@ -209,7 +209,7 @@ struct motion_system {
                     glm::vec3 _sum_velocity_xy = glm::vec3(0);
                     glm::float32 _sum_velocity_yaw = 0.f;
                     glm::float32 _sum_blend_size = 0.f;
-                    for (const std::pair<const std::string, _detail::fetched_container<animation_motion_track>>& _pair : animator._motion_tracks) {
+                    for (const std::pair<const std::string, _detail::OLDfetched_container<animation_motion_track>>& _pair : animator._motion_tracks) {
                         if (_pair.second.has_value()) {
                             const animation_motion_track& _track = _pair.second.value();
                             const animation_controller& _controller = animator._controllers.at(_pair.first);

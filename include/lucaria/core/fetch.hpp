@@ -12,23 +12,20 @@
 #include <lucaria/core/error.hpp>
 
 namespace lucaria {
+namespace detail {
 
-/// @brief Represents a fetched value
-/// @tparam FetchedType type being fetched
 template <typename FetchedType>
-struct fetched {
+struct async_container {
 
-	fetched() = default;
+	async_container() = default;
 
-    fetched(FetchedType&& value)
+    async_container(FetchedType&& value)
         : _cache(std::move(value))
         , _callbacks_invoked(true)
     {
     }
 
-    /// @brief Creates a fetched object from an existing std::future<FetchedType>
-    /// @param future the future to create from
-    fetched(std::future<FetchedType>&& future)
+    async_container(std::future<FetchedType>&& future)
     {
         std::shared_ptr<std::future<FetchedType>> _shared_future = std::make_shared<std::future<FetchedType>>(std::move(future));
         _poll = [_shared_future]() -> bool {
@@ -42,13 +39,8 @@ struct fetched {
         };
     }
 
-    /// @brief Creates a fetched object from an existing std::future<OriginFetchedType> and a continuation from OriginFetchedType to FetchedType
-    /// @tparam OriginFetchedType intermediate type to continuate
-    /// @tparam ThenCallback function type for the continuation
-    /// @param future the future to create from
-    /// @param then the continuation
     template <typename OriginFetchedType, typename ThenCallback, typename = std::enable_if_t<std::is_invocable_r_v<FetchedType, const ThenCallback&, const OriginFetchedType&>>>
-    fetched(std::future<OriginFetchedType>&& future, const ThenCallback& then)
+    async_container(std::future<OriginFetchedType>&& future, const ThenCallback& then)
     {
         std::shared_ptr<std::future<OriginFetchedType>> _shared_intermediate_future = std::make_shared<std::future<OriginFetchedType>>(std::move(future));
         std::shared_ptr<std::decay_t<ThenCallback>> _shared_decayed_then = std::make_shared<std::decay_t<ThenCallback>>(then);
@@ -63,9 +55,7 @@ struct fetched {
             return std::invoke(*_shared_decayed_then, _intermediate_value);
         };
     }
-
-    /// @brief Checks if the underlying std::future<FetchedType> has yet a value or is still computing
-    /// @return true if the value is available
+	
     [[nodiscard]] bool has_value() const
     {
         if (_cache) {
@@ -82,9 +72,6 @@ struct fetched {
         return false;
     }
 
-    /// @brief Gets the available value held by the underlying std::future<FetchedType>.
-    /// @throws throws a lucaria::runtime_error if the std::future result is not available yet
-    /// @return the available value
     [[nodiscard]] FetchedType& value()
     {
         if (!has_value()) {
@@ -93,9 +80,6 @@ struct fetched {
         return _cache.value();
     }
 
-    /// @brief Gets the available value held by the underlying std::future<FetchedType>.
-    /// @throws throws a lucaria::runtime_error if the std::future result is not available yet
-    /// @return the available value
     [[nodiscard]] const FetchedType& value() const
     {
         if (!has_value()) {
@@ -121,7 +105,6 @@ struct fetched {
         });
     }
 
-    /// @brief Conversion operator for the has_value member function
     [[nodiscard]] explicit operator bool() const
     {
         return has_value();
@@ -147,6 +130,10 @@ private:
         _callbacks.clear();
     }
 };
+
+}
+
+/////
 
 /// @brief
 /// @param fetch_path
@@ -187,14 +174,14 @@ namespace _detail {
     };
 
     template <typename FetchedType>
-    struct fetched_container {
+    struct OLDfetched_container {
 
         void emplace(FetchedType& obj)
         {
             _ptr = &obj;
         }
 
-        void emplace(fetched<FetchedType>& fut, const std::function<void()>& callback = nullptr)
+        void emplace(detail::async_container<FetchedType>& fut, const std::function<void()>& callback = nullptr)
         {
             _fut = &fut;
             _callback = callback;
@@ -230,7 +217,7 @@ namespace _detail {
 
     private:
         FetchedType* _ptr = nullptr;
-        fetched<FetchedType>* _fut = nullptr;
+        detail::async_container<FetchedType>* _fut = nullptr;
         mutable std::function<void()> _callback = nullptr;
         mutable bool _is_callback_invoked = false;
     };

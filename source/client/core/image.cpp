@@ -140,7 +140,7 @@ namespace detail {
     {
     }
 
-    fetched<image_implementation> fetch_image_cell_async(
+    async_container<image_implementation> fetch_image_cell_async(
         const std::filesystem::path& data_path,
         const std::optional<std::filesystem::path>& etc2_path,
         const std::optional<std::filesystem::path>& s3tc_path)
@@ -151,7 +151,7 @@ namespace detail {
         image_implementation _image(_data_bytes);
         _promise->set_value(std::move(_image)); }, true);
 
-        return fetched<image_implementation>(_promise->get_future());
+        return async_container<image_implementation>(_promise->get_future());
     }
 
 }

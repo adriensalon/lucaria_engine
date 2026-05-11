@@ -34,7 +34,7 @@ struct program {
     /// @param name source name of the attribute
     /// @param from fetched mesh to bind from
     /// @param attribute attribute type to bind
-    void bind_attribute(const std::string& name, const fetched<mesh>& from, const mesh_attribute attribute);
+    void bind_attribute(const std::string& name, const detail::async_container<mesh>& from, const mesh_attribute attribute);
 
     /// @brief Uses a cubemap uniform for draw calls
     /// @param name source name of the uniform
@@ -98,6 +98,6 @@ private:
 /// @brief Loads shaders from files asynchronously and compiles a program directly on the device
 /// @param vertex_data_path path to load vertex shader from
 /// @param fragment_data_path path to load fragment shader from
-[[nodiscard]] fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, const std::filesystem::path& fragment_data_path);
+[[nodiscard]] detail::async_container<program> fetch_program(const std::filesystem::path& vertex_data_path, const std::filesystem::path& fragment_data_path);
 
 }

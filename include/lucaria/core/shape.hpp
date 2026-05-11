@@ -79,6 +79,6 @@ private:
 /// @brief Loads geometry from a file asynchronously and uploads directly to the device
 /// @param data_path path to load from
 /// @param algorithm selected algorithm to create shape
-[[nodiscard]] fetched<shape> fetch_shape(const std::filesystem::path& data_path, const shape_algorithm algorithm = shape_algorithm::convex_hull);
+[[nodiscard]] detail::async_container<shape> fetch_shape(const std::filesystem::path& data_path, const shape_algorithm algorithm = shape_algorithm::convex_hull);
 
 }

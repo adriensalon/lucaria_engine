@@ -38,7 +38,7 @@ namespace detail {
         resource_manager<image_implementation> _resources = {};
     };
 
-    [[nodiscard]] fetched<image_implementation> fetch_image_cell_async(
+    [[nodiscard]] async_container<image_implementation> fetch_image_cell_async(
         const std::filesystem::path& path,
         const std::optional<std::filesystem::path>& etc2_path,
         const std::optional<std::filesystem::path>& s3tc_path);
@@ -90,8 +90,8 @@ struct image_object {
     [[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_cell<detail::image_implementation>* _cell = nullptr;
-    explicit image_object(detail::resource_cell<detail::image_implementation>* cell);
+    detail::resource_container<detail::image_implementation>* _cell = nullptr;
+    explicit image_object(detail::resource_container<detail::image_implementation>* cell);
     friend struct detail::image_manager;
 };
 

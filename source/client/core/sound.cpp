@@ -66,7 +66,7 @@ glm::uint sound_track::get_count() const
     return _count;
 }
 
-fetched<sound_track> fetch_sound(const std::filesystem::path& data_path)
+detail::async_container<sound_track> fetch_sound(const std::filesystem::path& data_path)
 {
     std::shared_ptr<std::promise<audio>> _audio_promise = std::make_shared<std::promise<audio>>();
     _fetch_bytes(data_path, [_audio_promise](const std::vector<char>& _data_bytes) {
@@ -74,7 +74,7 @@ fetched<sound_track> fetch_sound(const std::filesystem::path& data_path)
         _audio_promise->set_value(std::move(_audio)); }, true);
 
     // create sound on main thread
-    return fetched<sound_track>(_audio_promise->get_future(), [](const audio& _from) {
+    return detail::async_container<sound_track>(_audio_promise->get_future(), [](const audio& _from) {
         return sound_track(_from);
     });
 }

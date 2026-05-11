@@ -390,7 +390,7 @@ const std::unordered_map<std::string, glm::int32>& program::get_uniforms() const
     return _uniforms;
 }
 
-fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, const std::filesystem::path& fragment_data_path)
+detail::async_container<program> fetch_program(const std::filesystem::path& vertex_data_path, const std::filesystem::path& fragment_data_path)
 {
     std::vector<std::filesystem::path> _shaders_paths = { vertex_data_path, fragment_data_path };
     std::shared_ptr<std::promise<std::pair<shader, shader>>> _shaders_promise = std::make_shared<std::promise<std::pair<shader, shader>>>();
@@ -401,7 +401,7 @@ fetched<program> fetch_program(const std::filesystem::path& vertex_data_path, co
         };
         _shaders_promise->set_value(std::move(_shaders)); }, true);
 
-    return fetched<program>(_shaders_promise->get_future(), [](const std::pair<shader, shader>& _from) {
+    return detail::async_container<program>(_shaders_promise->get_future(), [](const std::pair<shader, shader>& _from) {
         return program(_from.first, _from.second);
     });
 }

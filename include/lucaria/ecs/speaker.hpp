@@ -15,7 +15,7 @@ struct speaker_component {
     ~speaker_component();
     
     speaker_component& use_sound(sound_track& from);
-    speaker_component& use_sound(fetched<sound_track>& from);
+    speaker_component& use_sound(detail::async_container<sound_track>& from);
 
     speaker_component& set_volume(const glm::float32 volume);
     speaker_component& set_play(const bool enable);
@@ -27,7 +27,7 @@ struct speaker_component {
 private:
     bool _is_owning = false;
     glm::uint _handle;
-    _detail::fetched_container<sound_track> _sound = {};
+    _detail::OLDfetched_container<sound_track> _sound = {};
     bool _is_playing = false;
     bool _want_playing = false;
     bool _is_looping = false;

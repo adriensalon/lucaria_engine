@@ -120,7 +120,7 @@ glm::uint cubemap::get_handle() const
     return _handle;
 }
 
-fetched<cubemap> fetch_cubemap(
+detail::async_container<cubemap> fetch_cubemap(
     const std::array<std::filesystem::path, 6>& data_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
@@ -139,7 +139,7 @@ fetched<cubemap> fetch_cubemap(
         _images_promise->set_value(std::move(_images)); }, true);
 
     // create cubemap on main thread
-    return fetched<cubemap>(_images_promise->get_future(), [](const std::array<detail::image_implementation, 6>& _from) {
+    return detail::async_container<cubemap>(_images_promise->get_future(), [](const std::array<detail::image_implementation, 6>& _from) {
         return cubemap(_from);
     });
 }

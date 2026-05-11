@@ -34,6 +34,6 @@ private:
 
 /// @brief Loads a sound from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<sound_track> fetch_sound(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<sound_track> fetch_sound(const std::filesystem::path& data_path);
 
 }

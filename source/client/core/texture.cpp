@@ -12,7 +12,7 @@ extern void _fetch_bytes(const std::filesystem::path& file_path, const std::func
 
 namespace detail {
 
-    fetched<texture_implementation> fetch_texture_cell(
+    async_container<texture_implementation> fetch_texture_cell(
         const std::filesystem::path& data_path,
         const std::optional<std::filesystem::path>& etc2_path,
         const std::optional<std::filesystem::path>& s3tc_path)
@@ -24,24 +24,24 @@ namespace detail {
         _image_promise->set_value(std::move(_image)); }, true);
 
         // create texture on main thread
-        return fetched<texture_implementation>(_image_promise->get_future(), [](const image_implementation& _from) {
+        return async_container<texture_implementation>(_image_promise->get_future(), [](const image_implementation& _from) {
             return texture_implementation(_from);
         });
     }
 
     texture_object texture_manager::create(const glm::uvec2 size)
     {
-        texture_implementation _texture(size);
-        fetched<texture_implementation> _fetched(std::move(_texture));
-        resource_cell<texture_implementation>* _resource = _resources.create_cell(std::move(_fetched));
-        return texture_object { _resource };
+        // texture_implementation _texture(size);
+        // async_container<texture_implementation> _fetched(std::move(_texture));
+        // resource_container<texture_implementation>* _resource = _resources.create_cell(std::move(_fetched));
+        return texture_object { _resources.create_cell(async_container<texture_implementation>(texture_implementation(size))) };
     }
 
     texture_object texture_manager::fetch(const std::filesystem::path& path,
         const std::optional<std::filesystem::path>& etc2_path = std::nullopt,
         const std::optional<std::filesystem::path>& s3tc_path = std::nullopt)
     {
-        resource_cell<texture_implementation>* cell = _resources.get_or_create_by_path(path, [&] {
+        resource_container<texture_implementation>* cell = _resources.get_or_create_by_path(path, [&] {
             return fetch_texture_cell(path, etc2_path, s3tc_path);
         });
 
@@ -92,7 +92,7 @@ texture_object::operator bool() const
     return has_value();
 }
 
-texture_object::texture_object(detail::resource_cell<detail::texture_implementation>* cell)
+texture_object::texture_object(detail::resource_container<detail::texture_implementation>* cell)
     : _cell(cell)
 {
 }

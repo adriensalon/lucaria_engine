@@ -31,6 +31,6 @@ struct audio {
 
 /// @brief Loads audio from a file asynchronously
 /// @param data_path path to load from
-[[nodiscard]] fetched<audio> fetch_audio(const std::filesystem::path& data_path);
+[[nodiscard]] detail::async_container<audio> fetch_audio(const std::filesystem::path& data_path);
 
 }

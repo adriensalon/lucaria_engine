@@ -54,7 +54,7 @@ const ImFont* font::get_handle() const
     return _handle;
 }
 
-fetched<font> fetch_font(const std::filesystem::path& data_path, const glm::float32 font_size)
+detail::async_container<font> fetch_font(const std::filesystem::path& data_path, const glm::float32 font_size)
 {
     std::shared_ptr<std::promise<std::shared_ptr<std::vector<char>>>> _data_promise = std::make_shared<std::promise<std::shared_ptr<std::vector<char>>>>();
     _fetch_bytes(data_path, [_data_promise](const std::vector<char>& _data_bytes) {
@@ -74,7 +74,7 @@ fetched<font> fetch_font(const std::filesystem::path& data_path, const glm::floa
         _data_promise->set_value(std::move(_shared_output)); }, true);
 
     // create font on main thread
-    return fetched<font>(_data_promise->get_future(), [font_size](const std::shared_ptr<std::vector<char>>& bytes) {
+    return detail::async_container<font>(_data_promise->get_future(), [font_size](const std::shared_ptr<std::vector<char>>& bytes) {
         return font(*bytes, font_size);
     });
 }
