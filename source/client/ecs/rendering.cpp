@@ -122,7 +122,7 @@ namespace {
 
     // post processing
     static std::optional<framebuffer> scene_framebuffer;
-    static texture_object scene_color_texture = {};
+    static std::optional<detail::texture_implementation> scene_color_texture = std::nullopt;
     static std::optional<renderbuffer> scene_depth_renderbuffer;
 
     // fxaa
@@ -422,7 +422,7 @@ namespace {
         return vertex_texcoord_a * _w + vertex_texcoord_b * lerp_texcoord_u + vertex_texcoord_c * lerp_texcoord_v;
     }
 
-    [[nodiscard]] std::optional<glm::vec2> viewport_raycast(const geometry& viewport_geometry)
+    [[nodiscard]] std::optional<glm::vec2> viewport_raycast(const detail::geometry_implementation& viewport_geometry)
     {
         glm::mat4 _inverse_view = glm::inverse(camera_view);
         glm::vec3 _origin = glm::vec3(_inverse_view * glm::vec4(0, 0, 0, 1));
@@ -561,10 +561,10 @@ struct rendering_system {
             scene_framebuffer = framebuffer();
         }
         if (!scene_color_texture) {
-            scene_color_texture = texture_object::create(_screen_size);
-            scene_framebuffer->bind_color(scene_color_texture);
+            scene_color_texture.emplace(_screen_size);
+            scene_framebuffer->bind_color(scene_color_texture.value());
         } else {
-            scene_color_texture.resize(_screen_size);
+            scene_color_texture.value().resize(_screen_size);
         }
         if (!scene_depth_renderbuffer) {
             scene_depth_renderbuffer = renderbuffer(_screen_size, GL_DEPTH_COMPONENT24);
@@ -672,30 +672,30 @@ struct rendering_system {
     {
         if (skybox_cubemap.has_value()) {
             static bool _is_skybox_setup = false;
-            static std::optional<mesh> _persistent_skybox_mesh = std::nullopt;
+            static std::optional<detail::mesh_implementation> _persistent_skybox_mesh = {};
             static std::optional<program> _persistent_skybox_program = std::nullopt;
 
             if (!_is_skybox_setup) {
                 geometry_data _geometry_data;
                 _geometry_data.positions = skybox_positions;
                 _geometry_data.indices = skybox_indices;
-                geometry _skybox_geometry(std::move(_geometry_data));
+                detail::geometry_implementation _skybox_geometry(std::move(_geometry_data));
 
                 shader _skybox_vertex_shader(shader_data { skybox_vertex });
                 shader _skybox_fragment_shader(shader_data { skybox_fragment });
 
-                _persistent_skybox_mesh = mesh(_skybox_geometry);
-                _persistent_skybox_program = program(_skybox_vertex_shader, _skybox_fragment_shader);
+                _persistent_skybox_mesh.emplace(_skybox_geometry);
+                _persistent_skybox_program.emplace(_skybox_vertex_shader, _skybox_fragment_shader);
                 _is_skybox_setup = true;
             }
 
-            mesh& _skybox_mesh = _persistent_skybox_mesh.value();
+            detail::mesh_implementation& _skybox_mesh = _persistent_skybox_mesh.value();
             program& _skybox_program = _persistent_skybox_program.value();
             cubemap& _skybox_cubemap = skybox_cubemap.value();
             const glm::mat4 _skybox_rotation_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(_skybox_rotation), glm::vec3(0, 1, 0));
             const glm::mat4 _no_translation_view_projection = camera_projection * glm::mat4(glm::mat3(camera_view)) * _skybox_rotation_matrix;
             _skybox_program.use();
-            _skybox_program.bind_attribute("vert_position", _skybox_mesh, mesh_attribute::position);
+            _skybox_program.bind_attribute("vert_position", _skybox_mesh, detail::mesh_attribute::position);
             _skybox_program.bind_uniform("uniform_color", _skybox_cubemap, 0);
             _skybox_program.bind_uniform("uniform_projection", _no_translation_view_projection);
             _skybox_program.draw(false);
@@ -716,23 +716,23 @@ struct rendering_system {
         program& _blockout_program = _persistent_blockout_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<blockout_model_component, transform_component>().each([&](blockout_model_component& _model, transform_component& _transform) {
-                if (_model._mesh.has_value()) {
+                if (_model._mesh) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const mesh& _mesh = _model._mesh.value();
+                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
                     _blockout_program.use();
-                    _blockout_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _blockout_program.bind_attribute("vert_normal", _mesh, mesh_attribute::normal);
+                    _blockout_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
+                    _blockout_program.bind_attribute("vert_normal", _mesh, detail::mesh_attribute::normal);
                     _blockout_program.bind_uniform("uniform_view", _model_view_projection);
                     _blockout_program.draw();
                 }
             });
 
             scene.view<blockout_model_component>(entt::exclude<transform_component>).each([&](blockout_model_component& _model) {
-                if (_model._mesh.has_value()) {
-                    const mesh& _mesh = _model._mesh.value();
+                if (_model._mesh) {
+                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
                     _blockout_program.use();
-                    _blockout_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _blockout_program.bind_attribute("vert_normal", _mesh, mesh_attribute::normal);
+                    _blockout_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
+                    _blockout_program.bind_attribute("vert_normal", _mesh, detail::mesh_attribute::normal);
                     _blockout_program.bind_uniform("uniform_view", camera_view_projection);
                     _blockout_program.draw();
                 }
@@ -755,25 +755,27 @@ struct rendering_system {
         program& _unlit_program = _persistent_unlit_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<unlit_model_component, transform_component>(entt::exclude<animator_component>).each([&](unlit_model_component& _model, transform_component& _transform) {
-                if (_model._mesh.has_value() && _model._color.has_value()) {
+                if (_model._mesh && _model._color) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const mesh& _mesh = _model._mesh.value();
+                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
+                    const detail::texture_implementation& _color = _model._color._cell->get();
                     _unlit_program.use();
-                    _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
+                    _unlit_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
+                    _unlit_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
                     _unlit_program.bind_uniform("uniform_view", _model_view_projection);
-                    _unlit_program.bind_uniform("uniform_color", _model._color, 0);
+                    _unlit_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_program.draw();
                 }
             });
 
             scene.view<unlit_model_component>(entt::exclude<transform_component, animator_component>).each([&](unlit_model_component& _model) {
-                if (_model._mesh.has_value() && _model._color.has_value()) {
-                    const mesh& _mesh = _model._mesh.value();
+                if (_model._mesh && _model._color) {
+                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
+                    const detail::texture_implementation& _color = _model._color._cell->get();
                     _unlit_program.use();
-                    _unlit_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _unlit_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
-                    _unlit_program.bind_uniform("uniform_color", _model._color, 0);
+                    _unlit_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
+                    _unlit_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
+                    _unlit_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_program.draw();
                 }
@@ -795,37 +797,36 @@ struct rendering_system {
         program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<unlit_model_component, transform_component, animator_component>().each([&](unlit_model_component& _model, transform_component& _transform, animator_component& animator) {
-                // if (_model._mesh.has_value() && _model._oldcolor.has_value() && animator._skeleton.has_value()) {
-                if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
+                if (_model._mesh && _model._color && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const mesh& _mesh = _model._mesh.value();
-                    // const detail::texture_implementation& _color = _model._oldcolor.value();
+                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
+                    const detail::texture_implementation& _color = _model._color._cell->get();
                     _unlit_skinned_program.use();
-                    _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
-                    _unlit_skinned_program.bind_attribute("vert_bones", _mesh, mesh_attribute::bones);
-                    _unlit_skinned_program.bind_attribute("vert_weights", _mesh, mesh_attribute::weights);
+                    _unlit_skinned_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
+                    _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
+                    _unlit_skinned_program.bind_attribute("vert_bones", _mesh, detail::mesh_attribute::bones);
+                    _unlit_skinned_program.bind_attribute("vert_weights", _mesh, detail::mesh_attribute::weights);
                     _unlit_skinned_program.bind_uniform("uniform_view", _model_view_projection);
                     _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
                     _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
-                    // _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
-                    _unlit_skinned_program.bind_uniform("uniform_color", _model._color, 0);
+                    _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
                 }
             });
 
             scene.view<unlit_model_component, animator_component>(entt::exclude<transform_component>).each([&](unlit_model_component& _model, animator_component& animator) {
-                if (_model._mesh.has_value() && _model._color.has_value() && animator._skeleton.has_value()) {
-                    const mesh& _mesh = _model._mesh.value();
+                if (_model._mesh && _model._color && animator._skeleton.has_value()) {
+                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
+                    const detail::texture_implementation& _color = _model._color._cell->get();
                     _unlit_skinned_program.use();
-                    _unlit_skinned_program.bind_attribute("vert_position", _mesh, mesh_attribute::position);
-                    _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, mesh_attribute::texcoord);
-                    _unlit_skinned_program.bind_attribute("vert_bones", _mesh, mesh_attribute::bones);
-                    _unlit_skinned_program.bind_attribute("vert_weights", _mesh, mesh_attribute::weights);
+                    _unlit_skinned_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
+                    _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
+                    _unlit_skinned_program.bind_attribute("vert_bones", _mesh, detail::mesh_attribute::bones);
+                    _unlit_skinned_program.bind_attribute("vert_weights", _mesh, detail::mesh_attribute::weights);
                     _unlit_skinned_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
                     _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
-                    _unlit_skinned_program.bind_uniform("uniform_color", _model._color, 0);
+                    _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
                 }
             });
@@ -847,7 +848,7 @@ struct rendering_system {
 
                     std::optional<glm::vec2> _raycasted_uvs;
                     if (interface._use_interaction) {
-                        _raycasted_uvs = viewport_raycast(interface._viewport_geometry.value());
+                        _raycasted_uvs = viewport_raycast(interface._viewport_geometry._cell->get());
                         if (_raycasted_uvs) {
                             interface._interaction_screen_position = {
                                 (_raycasted_uvs.value().x) * interface._viewport_size.x,
@@ -888,9 +889,9 @@ struct rendering_system {
                     scene_framebuffer->use();
                     program& _unlit_program = _persistent_unlit_program.value();
                     _unlit_program.use();
-                    _unlit_program.bind_attribute("vert_position", *interface._viewport_mesh.get(), mesh_attribute::position);
-                    _unlit_program.bind_attribute("vert_texcoord", *interface._viewport_mesh.get(), mesh_attribute::texcoord);
-                    _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture, 0);
+                    _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value(), detail::mesh_attribute::position);
+                    _unlit_program.bind_attribute("vert_texcoord", interface._viewport_mesh.value(), detail::mesh_attribute::texcoord);
+                    _unlit_program.bind_uniform("uniform_color", interface._imgui_color_texture.value(), 0);
                     _unlit_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_program.draw();
 
@@ -924,7 +925,7 @@ struct rendering_system {
     static void draw_post_processing()
     {
         static bool _is_post_processing_setup = false;
-        static std::optional<mesh> _persistent_post_processing_mesh = std::nullopt;
+        static std::optional<detail::mesh_implementation> _persistent_post_processing_mesh = std::nullopt;
         static std::optional<program> _persistent_post_processing_program = std::nullopt;
 
         if (!_is_post_processing_setup) {
@@ -942,23 +943,23 @@ struct rendering_system {
                 glm::uvec3(0, 2, 3),
             };
 
-            geometry _post_processing_geometry(std::move(_geometry_data));
+            detail::geometry_implementation _post_processing_geometry(std::move(_geometry_data));
             shader _post_processing_vertex_shader(shader_data { post_processing_vertex });
             shader _post_processing_fragment_shader(shader_data { post_processing_fragment });
 
-            _persistent_post_processing_mesh = mesh(_post_processing_geometry);
+            _persistent_post_processing_mesh.emplace(_post_processing_geometry);
             _persistent_post_processing_program = program(_post_processing_vertex_shader, _post_processing_fragment_shader);
             _is_post_processing_setup = true;
         }
 
-        mesh& _post_processing_mesh = _persistent_post_processing_mesh.value();
+        detail::mesh_implementation& _post_processing_mesh = _persistent_post_processing_mesh.value();
         program& _post_processing_program = _persistent_post_processing_program.value();
 
         framebuffer::use_default();
 
         _post_processing_program.use();
-        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, mesh_attribute::position);
-        _post_processing_program.bind_uniform("uniform_color", scene_color_texture, 0);
+        _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, detail::mesh_attribute::position);
+        _post_processing_program.bind_uniform("uniform_color", scene_color_texture.value(), 0);
         _post_processing_program.bind_uniform("uniform_texel_size", 1.f / glm::vec2(get_screen_size()));
 
         // fxaa

@@ -26,15 +26,9 @@ struct program {
 
     /// @brief Uses a mesh attribute for draw calls
     /// @param name source name of the attribute
-    /// @param from mesh to bind from
-    /// @param attribute attribute type to bind
-    void bind_attribute(const std::string& name, const mesh& from, const mesh_attribute attribute);
-
-    /// @brief Uses a mesh attribute for draw calls
-    /// @param name source name of the attribute
     /// @param from fetched mesh to bind from
     /// @param attribute attribute type to bind
-    void bind_attribute(const std::string& name, const detail::async_container<mesh>& from, const mesh_attribute attribute);
+    void bind_attribute(const std::string& name, const detail::mesh_implementation& mesh, const detail::mesh_attribute attribute);
 
     /// @brief Uses a cubemap uniform for draw calls
     /// @param name source name of the uniform
@@ -46,10 +40,7 @@ struct program {
     /// @param name source name of the uniform
     /// @param from texture to bind from
     /// @param slot texture slot to use
-    // void bind_uniform(const std::string& name, const detail::texture_cell& from, const glm::uint slot = 0) const;
-    
-
-	void bind_uniform(const std::string& name, const texture_object texture, const glm::uint slot = 0) const;
+	void bind_uniform(const std::string& name, const detail::texture_implementation& texture, const glm::uint slot = 0) const;
 
     /// @brief Uses a uniform buffer for draw calls
     /// @tparam value_t type of the uniform data

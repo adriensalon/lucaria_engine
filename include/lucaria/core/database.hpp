@@ -10,8 +10,10 @@ namespace detail {
 
 struct asset_database {
 	image_manager images = {};
+	geometry_manager geometries = {};
+
     texture_manager textures = {};
-    // mesh_manager meshes;
+    mesh_manager meshes = {};
     // skeleton_manager skeletons;
     // animation_manager animations;
 };

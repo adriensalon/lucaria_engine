@@ -14,18 +14,10 @@ struct blockout_model_component {
     blockout_model_component(blockout_model_component&& other) = default;
     blockout_model_component& operator=(blockout_model_component&& other) = default;
 
-    /// @brief 
-    /// @param from 
-    /// @return 
-    blockout_model_component& use_mesh(mesh& from);
-
-    /// @brief 
-    /// @param from 
-    /// @return 
-    blockout_model_component& use_mesh(detail::async_container<mesh>& from);
-
+    blockout_model_component& use_mesh(const mesh_object mesh);
+	
 private:
-    _detail::OLDfetched_container<mesh> _mesh = {};
+    mesh_object _mesh = {};
     friend struct motion_system;
     friend struct rendering_system;
 };
@@ -38,24 +30,11 @@ struct unlit_model_component {
     unlit_model_component(unlit_model_component&& other) = default;
     unlit_model_component& operator=(unlit_model_component&& other) = default;
 
-    /// @brief 
-    /// @param from 
-    /// @return 
-    unlit_model_component& use_mesh(mesh& from);
-
-    /// @brief 
-    /// @param from 
-    /// @return 
-    unlit_model_component& use_mesh(detail::async_container<mesh>& from);
-    
-	unlit_model_component& use_color(texture_object& color)
-	{
-		_color = color;
-		return *this;
-	}
+	unlit_model_component& use_mesh(const mesh_object mesh);
+	unlit_model_component& use_color(const texture_object color);
 
 private:
-    _detail::OLDfetched_container<mesh> _mesh = {};
+    mesh_object _mesh = {};
     texture_object _color = {};
     friend struct motion_system;
     friend struct rendering_system;

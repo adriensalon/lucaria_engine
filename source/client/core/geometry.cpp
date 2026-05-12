@@ -2,6 +2,7 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/geometry.hpp>
+#include <lucaria/core/database.hpp>
 
 namespace lucaria {
 
@@ -23,31 +24,57 @@ namespace {
 
 }
 
-geometry::geometry(geometry_data&& data)
-{
-    this->data = std::move(data);
-}
+namespace detail {
 
-geometry::geometry(const std::vector<char>& data_bytes)
-{
-    load_data_from_bytes(data, data_bytes);
-}
+    geometry_implementation::geometry_implementation(geometry_data&& data)
+    {
+        this->data = std::move(data);
+    }
 
-geometry::geometry(const std::filesystem::path& data_path)
-{
-    _load_bytes(data_path, [this](const std::vector<char>& _data_bytes) {
-        load_data_from_bytes(data, _data_bytes);
-    });
-}
+    geometry_implementation::geometry_implementation(const std::vector<char>& data_bytes)
+    {
+        load_data_from_bytes(data, data_bytes);
+    }
 
-detail::async_container<geometry> fetch_geometry(const std::filesystem::path& data_path)
-{
-    std::shared_ptr<std::promise<geometry>> _promise = std::make_shared<std::promise<geometry>>();
-    _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
-        geometry _geometry(_data_bytes);
+    async_container<geometry_implementation> fetch_geometry_async(const std::filesystem::path& data_path)
+    {
+        std::shared_ptr<std::promise<geometry_implementation>> _promise = std::make_shared<std::promise<geometry_implementation>>();
+        _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
+        geometry_implementation _geometry(_data_bytes);
         _promise->set_value(std::move(_geometry)); }, true);
 
-    return detail::async_container<geometry>(_promise->get_future());
+        return async_container<geometry_implementation>(_promise->get_future());
+    }
+
+	geometry_object geometry_manager::fetch(const std::filesystem::path& path)
+    {
+        resource_container<geometry_implementation>* cell = _resources.get_or_create_by_path(path, [&] {
+            return fetch_geometry_async(path);
+        });
+
+        return geometry_object { cell };
+    }
+
+}
+
+geometry_object geometry_object::fetch(const std::filesystem::path& path)
+{
+    return detail::engine_assets().geometries.fetch(path);
+}
+
+bool geometry_object::has_value() const
+{
+    return _cell && _cell->is_ready();
+}
+
+geometry_object::operator bool() const
+{
+    return has_value();
+}
+
+geometry_object::geometry_object(detail::resource_container<detail::geometry_implementation>* cell)
+    : _cell(cell)
+{
 }
 
 }

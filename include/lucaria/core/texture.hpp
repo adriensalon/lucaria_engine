@@ -23,14 +23,14 @@ namespace detail {
         texture_implementation(const glm::uvec2 size);
         void resize(const glm::uvec2 size);
         [[nodiscard]] glm::uvec2 get_size() const;
-
-        [[nodiscard]] glm::uint get_handle() const; // opengl
+        [[nodiscard]] glm::uint get_handle() const;
 
     private:
 		texture_implementation_opengl _opengl_impl;
     };
 
     struct texture_manager {
+        texture_object create(const detail::image_implementation& image);
         texture_object create(const glm::uvec2 size);
         texture_object fetch(
 			const std::filesystem::path& path, 
@@ -40,11 +40,6 @@ namespace detail {
     private:
         resource_manager<texture_implementation> _resources = {};
     };
-
-    [[nodiscard]] async_container<texture_implementation> fetch_texture_cell_async(
-		const std::filesystem::path& path, 
-		const std::optional<std::filesystem::path>& etc2_path, 
-		const std::optional<std::filesystem::path>& s3tc_path);
 
 }
 
@@ -56,16 +51,10 @@ struct texture_object {
 	texture_object(texture_object&& other) = default;
 	texture_object& operator=(texture_object&& other) = default;
 
-    /// @brief Creates a new texture with the specified size
-    /// @param size	the size of the texture to create
-    /// @return a texture object with an empty texture of the specified size
+    /// TODO GO CONTEXT
     static texture_object create(const glm::uvec2 size);
 
-    /// @brief Loads an image from a file asynchronously and uploads directly to the device,
-    /// lets the runtime choose the best format it can use without downloading the others
-    /// @param path path to load uncompressed image version from
-    /// @param etc2_path path to load ETC2 compressed image version from
-    /// @param s3tc_path path to load S3TC compressed image version from
+    /// TODO GO CONTEXT
     static texture_object fetch(
 		const std::filesystem::path& path,
         const std::optional<std::filesystem::path>& etc2_path = std::nullopt,
@@ -74,6 +63,9 @@ struct texture_object {
     /// @brief Checks if the texture is ready to be used
     /// @return true if the texture is ready, false otherwise
     [[nodiscard]] bool has_value() const;
+
+	/// @brief Conversion operator for the has_value member function
+	[[nodiscard]] explicit operator bool() const;
 
     /// @brief Resizes the texture to the specified size
     /// @param size the new size of the texture
@@ -88,9 +80,6 @@ struct texture_object {
     /// @brief Gets the size of the texture
     /// @return the size of the texture
     [[nodiscard]] glm::uvec2 get_size() const;
-
-	/// @brief Conversion operator for the has_value member function
-	[[nodiscard]] explicit operator bool() const;
 
 private:
     detail::resource_container<detail::texture_implementation>* _cell = nullptr;

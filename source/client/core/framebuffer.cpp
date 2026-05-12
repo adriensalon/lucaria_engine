@@ -78,9 +78,9 @@ void framebuffer::use()
     glBindFramebuffer(GL_FRAMEBUFFER, _handle);
 }
 
-void framebuffer::bind_color(const texture_object color)
+void framebuffer::bind_color(const detail::texture_implementation& color)
 {
-	const glm::uint _texture_handle = color._cell->get().get_handle();
+	const glm::uint _texture_handle = color.get_handle();
 
     if (_texture_color_id && _texture_color_id.value() == _texture_handle) {
         return;

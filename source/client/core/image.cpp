@@ -140,7 +140,7 @@ namespace detail {
     {
     }
 
-    async_container<image_implementation> fetch_image_cell_async(
+    async_container<image_implementation> fetch_image_async(
         const std::filesystem::path& data_path,
         const std::optional<std::filesystem::path>& etc2_path,
         const std::optional<std::filesystem::path>& s3tc_path)

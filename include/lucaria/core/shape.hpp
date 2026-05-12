@@ -27,7 +27,7 @@ struct shape {
     /// @brief Creates a shape from geometry data
     /// @param from the geometry data to create from
     /// @param algorithm selected algorithm to create shape
-    shape(const geometry& from, const shape_algorithm algorithm = shape_algorithm::convex_hull);
+    shape(const detail::geometry_implementation& from, const shape_algorithm algorithm = shape_algorithm::convex_hull);
 
     /// @brief Creates a shape from an existing Bullet shape instance
     /// @param handle Bullet shape instance to create from

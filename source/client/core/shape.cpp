@@ -9,7 +9,7 @@ extern void _fetch_bytes(const std::filesystem::path& file_path, const std::func
 
 namespace {
 
-    static void make_convex_hull_shape(const geometry& from, std::unique_ptr<btCollisionShape>& handle)
+    static void make_convex_hull_shape(const detail::geometry_implementation& from, std::unique_ptr<btCollisionShape>& handle)
     {
         handle = std::make_unique<btConvexHullShape>();
         btConvexHullShape* _hull_shape = static_cast<btConvexHullShape*>(handle.get());
@@ -19,7 +19,7 @@ namespace {
         _hull_shape->recalcLocalAabb();
     }
 
-    static void make_triangle_mesh_shape(const geometry& from, std::unique_ptr<btCollisionShape>& handle, std::unique_ptr<btTriangleMesh>& triangle_handle)
+    static void make_triangle_mesh_shape(const detail::geometry_implementation& from, std::unique_ptr<btCollisionShape>& handle, std::unique_ptr<btTriangleMesh>& triangle_handle)
     {
         btVector3 _vertex_1, _vertex_2, _vertex_3;
         triangle_handle = std::make_unique<btTriangleMesh>();
@@ -36,7 +36,7 @@ namespace {
 
 }
 
-shape::shape(const geometry& from, const shape_algorithm algorithm)
+shape::shape(const detail::geometry_implementation& from, const shape_algorithm algorithm)
 {
     if (algorithm == shape_algorithm::convex_hull) {
         make_convex_hull_shape(from, _handle);
@@ -110,7 +110,7 @@ detail::async_container<shape> fetch_shape(const std::filesystem::path& data_pat
 {
     std::shared_ptr<std::promise<shape>> _promise = std::make_shared<std::promise<shape>>();
     _fetch_bytes(data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
-        geometry _geometry(_data_bytes);
+        detail::geometry_implementation _geometry(_data_bytes);
         shape _shape(_geometry, algorithm);
         _promise->set_value(std::move(_shape)); }, true);
 

@@ -23,15 +23,15 @@ void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const st
 
 namespace {
 
-    static const std::unordered_map<mesh_attribute, glm::uint> mesh_attribute_sizes = {
-        { mesh_attribute::position, 3 },
-        { mesh_attribute::color, 3 },
-        { mesh_attribute::normal, 3 },
-        { mesh_attribute::tangent, 3 },
-        { mesh_attribute::bitangent, 3 },
-        { mesh_attribute::texcoord, 2 },
-        { mesh_attribute::bones, 4 },
-        { mesh_attribute::weights, 4 },
+    static const std::unordered_map<detail::mesh_attribute, glm::uint> mesh_attribute_sizes = {
+        { detail::mesh_attribute::position, 3 },
+        { detail::mesh_attribute::color, 3 },
+        { detail::mesh_attribute::normal, 3 },
+        { detail::mesh_attribute::tangent, 3 },
+        { detail::mesh_attribute::bitangent, 3 },
+        { detail::mesh_attribute::texcoord, 2 },
+        { detail::mesh_attribute::bones, 4 },
+        { detail::mesh_attribute::weights, 4 },
     };
 
     [[nodiscard]] static glm::uint create_shader(const GLenum type, const std::string& text)
@@ -167,11 +167,11 @@ void program::use() const
     glCullFace(GL_BACK);
 }
 
-void program::bind_attribute(const std::string& name, const mesh& from, const mesh_attribute attribute)
+void program::bind_attribute(const std::string& name, const detail::mesh_implementation& mesh, const detail::mesh_attribute attribute)
 {
-    _bound_indices_count = from.get_size();
-    _bound_array_id = from.get_array_handle();
-    const std::unordered_map<mesh_attribute, glm::uint>& _attribute_handles = from.get_attribute_handles();
+    _bound_indices_count = mesh.get_size();
+    _bound_array_id = mesh.get_array_handle();
+    const std::unordered_map<detail::mesh_attribute, glm::uint>& _attribute_handles = mesh.get_attribute_handles();
     if (_attributes.find(name) == _attributes.end()) {
         LUCARIA_RUNTIME_ERROR("Name " + name + " not found in shader")
     }
@@ -182,7 +182,7 @@ void program::bind_attribute(const std::string& name, const mesh& from, const me
         LUCARIA_RUNTIME_ERROR("Attribute " + std::to_string(static_cast<int>(attribute)) + " is not in mesh")
     }
     glBindBuffer(GL_ARRAY_BUFFER, _attribute_handles.at(attribute));
-    if (attribute == mesh_attribute::bones) {
+    if (attribute == detail::mesh_attribute::bones) {
         glVertexAttribIPointer(_location, _size, GL_INT, _size * sizeof(glm::int32), (void*)0);
     } else {
         glVertexAttribPointer(_location, _size, GL_FLOAT, GL_FALSE, _size * sizeof(glm::float32), (void*)0);
@@ -224,21 +224,21 @@ void program::bind_uniform(const std::string& name, const cubemap& from, const g
     glBindTexture(GL_TEXTURE_CUBE_MAP, from.get_handle());
 }
 
-// void program::bind_uniform(const std::string& name, const detail::texture_implementation& from, const glm::uint slot) const
-// {
-//     glm::int32 _location = _uniforms.at(name);
-//     glUniform1i(_location, slot);
-//     glActiveTexture(GL_TEXTURE0 + slot);
-//     glBindTexture(GL_TEXTURE_2D, from.get_handle());
-// }
-
-void program::bind_uniform(const std::string& name, const texture_object texture, const glm::uint slot) const
+void program::bind_uniform(const std::string& name, const detail::texture_implementation& texture, const glm::uint slot) const
 {
-	glm::int32 _location = _uniforms.at(name);
-	glUniform1i(_location, slot);
-	glActiveTexture(GL_TEXTURE0 + slot);
-	glBindTexture(GL_TEXTURE_2D, texture._cell->get().get_handle());
+    glm::int32 _location = _uniforms.at(name);
+    glUniform1i(_location, slot);
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, texture.get_handle());
 }
+
+// void program::bind_uniform(const std::string& name, const texture_object texture, const glm::uint slot) const
+// {
+// 	glm::int32 _location = _uniforms.at(name);
+// 	glUniform1i(_location, slot);
+// 	glActiveTexture(GL_TEXTURE0 + slot);
+// 	glBindTexture(GL_TEXTURE_2D, texture._cell->get().get_handle());
+// }
 
 template <>
 void program::bind_uniform<glm::int32>(const std::string& name, const glm::int32& value)

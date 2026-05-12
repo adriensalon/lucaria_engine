@@ -3,79 +3,86 @@
 #include <unordered_map>
 
 #include <lucaria/core/geometry.hpp>
+#include <lucaria/core/resource.hpp>
+
+#include <lucaria/backend/opengl/mesh_opengl.hpp>
 
 namespace lucaria {
 
-/// @brief Represents the different available mesh attributes
-enum struct mesh_attribute {
-    position,
-    color,
-    normal,
-    tangent,
-    bitangent,
-    texcoord,
-    bones,
-    weights
-};
+struct mesh_object;
 
-/// @brief Represents runtime geometry on the device
-struct mesh {
-    LUCARIA_DELETE_DEFAULT(mesh)
-    mesh(const mesh& other) = delete;
-    mesh& operator=(const mesh& other) = delete;
-    mesh(mesh&& other);
-    mesh& operator=(mesh&& other);
-    ~mesh();
+namespace detail {
 
-    /// @brief Creates a mesh from geometry data
-    /// @param from the geometry data to create from
-    mesh(const geometry& from);
+    enum struct mesh_attribute {
+        position,
+        color,
+        normal,
+        tangent,
+        bitangent,
+        texcoord,
+        bones,
+        weights
+    };
 
-    /// @brief Update a mesh attribute buffer from geometry data
-    /// @param from the geometry data to update from
-    /// @param attribute the selected attribute to use from the geometry data
-    /// @param size the selected count to update
-    /// @param offset the selected offset to update from
-    void update_attribute(const geometry& from, const mesh_attribute attribute, const glm::uint size, const glm::uint offset = 0);
+    struct mesh_implementation {
+        LUCARIA_DELETE_DEFAULT(mesh_implementation)
+        mesh_implementation(const mesh_implementation& other) = delete;
+        mesh_implementation& operator=(const mesh_implementation& other) = delete;
+        mesh_implementation(mesh_implementation&& other);
+        mesh_implementation& operator=(mesh_implementation&& other);
+        ~mesh_implementation();
 
-    /// @brief Updates the mesh indices buffer from geometry data
-    /// @param from the geometry data to update from
-    /// @param size the selected count to update
-    /// @param offset the selected offset to update from
-    void update_indices(const geometry& from, const glm::uint size, const glm::uint offset = 0);
+        mesh_implementation(const geometry_implementation& from);
+        void update_attribute(const geometry_implementation& from, const mesh_attribute attribute, const glm::uint size, const glm::uint offset = 0);
+        void update_indices(const geometry_implementation& from, const glm::uint size, const glm::uint offset = 0);
+        [[nodiscard]] glm::uint get_size() const;
+        [[nodiscard]] glm::uint get_array_handle() const;
+        [[nodiscard]] glm::uint get_elements_handle() const;
+        [[nodiscard]] const std::unordered_map<mesh_attribute, glm::uint>& get_attribute_handles() const;
+        [[nodiscard]] const std::vector<glm::mat4>& get_invposes() const;
 
-    /// @brief Returns the mesh vertices count
-    /// @return the vertices count
-    [[nodiscard]] glm::uint get_size() const;
+    private:
+		mesh_implementation_opengl _opengl_impl;
+    };
 
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] glm::uint get_array_handle() const;
+    struct mesh_manager {
+        mesh_object create(const geometry_implementation& geometry);
+        mesh_object fetch(const std::filesystem::path& path);
 
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] glm::uint get_elements_handle() const;
+    private:
+        resource_manager<mesh_implementation> _resources = {};
+    };
 
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handles
-    [[nodiscard]] const std::unordered_map<mesh_attribute, glm::uint>& get_attribute_handles() const;
+}
 
-    /// @brief Returns a handle to the CPU stored invposes matrices
-    /// @return the CPU stored invposes matrices
-    [[nodiscard]] const std::vector<glm::mat4>& get_invposes() const;
+struct mesh_object {
+	mesh_object() = default;
+	mesh_object(const mesh_object& other) = default;
+	mesh_object& operator=(const mesh_object& other) = default;
+	mesh_object(mesh_object&& other) = default;
+	mesh_object& operator=(mesh_object&& other) = default;
+
+    /// TODO GO CONTEXT
+    static mesh_object create(const detail::geometry_implementation& geometry);
+
+    /// TODO GO CONTEXT
+    static mesh_object fetch(const std::filesystem::path& path);
+
+    /// @brief Checks if the mesh is ready to be used
+    /// @return true if the mesh is ready, false otherwise
+    [[nodiscard]] bool has_value() const;
+	
+	/// @brief Conversion operator for the has_value member function
+	[[nodiscard]] explicit operator bool() const;
 
 private:
-    bool _is_owning;
-    glm::uint _size;
-    glm::uint _array_handle;
-    glm::uint _elements_handle;
-    std::unordered_map<mesh_attribute, glm::uint> _attribute_handles;
-    std::vector<glm::mat4> _invposes;
+    detail::resource_container<detail::mesh_implementation>* _cell = nullptr;
+    explicit mesh_object(detail::resource_container<detail::mesh_implementation>* cell);
+    friend struct detail::mesh_manager;
+    friend struct program;
+    friend struct framebuffer;
+    friend struct rendering_system;
 };
-
-/// @brief Loads geometry from a file asynchronously and uploads directly to the device
-/// @param data_path path to load from
-[[nodiscard]] detail::async_container<mesh> fetch_mesh(const std::filesystem::path& data_path);
 
 // Internal definitions
 namespace _detail {
@@ -90,7 +97,7 @@ namespace _detail {
         guizmo_mesh& operator=(guizmo_mesh&& other);
         ~guizmo_mesh();
 
-        guizmo_mesh(const geometry& from);
+        guizmo_mesh(const detail::geometry_implementation& from);
         guizmo_mesh(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
 
         void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);

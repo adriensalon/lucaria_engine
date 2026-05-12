@@ -2,27 +2,21 @@
 
 namespace lucaria {
 
-blockout_model_component& blockout_model_component::use_mesh(mesh& from)
+blockout_model_component& blockout_model_component::use_mesh(const mesh_object mesh)
 {
-    _mesh.emplace(from);
+    _mesh = mesh;
     return *this;
 }
 
-blockout_model_component& blockout_model_component::use_mesh(detail::async_container<mesh>& from)
+unlit_model_component& unlit_model_component::use_mesh(const mesh_object mesh)
 {
-    _mesh.emplace(from);
+    _mesh = mesh;
     return *this;
 }
 
-unlit_model_component& unlit_model_component::use_mesh(mesh& from)
+unlit_model_component& unlit_model_component::use_color(const texture_object color)
 {
-    _mesh.emplace(from);
-    return *this;
-}
-
-unlit_model_component& unlit_model_component::use_mesh(detail::async_container<mesh>& from)
-{
-    _mesh.emplace(from);
+    _color = color;
     return *this;
 }
 

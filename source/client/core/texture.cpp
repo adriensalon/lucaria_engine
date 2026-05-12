@@ -12,12 +12,12 @@ extern void _fetch_bytes(const std::filesystem::path& file_path, const std::func
 
 namespace detail {
 
-    async_container<texture_implementation> fetch_texture_cell(
-        const std::filesystem::path& data_path,
+    async_container<texture_implementation> fetch_texture_async(
+        const std::filesystem::path& path,
         const std::optional<std::filesystem::path>& etc2_path,
         const std::optional<std::filesystem::path>& s3tc_path)
     {
-        const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
+        const std::filesystem::path& _image_path = _resolve_image_path(path, etc2_path, s3tc_path);
         std::shared_ptr<std::promise<image_implementation>> _image_promise = std::make_shared<std::promise<image_implementation>>();
         _fetch_bytes(_image_path, [_image_promise](const std::vector<char>& _data_bytes) {
         image_implementation _image(_data_bytes);
@@ -42,7 +42,7 @@ namespace detail {
         const std::optional<std::filesystem::path>& s3tc_path = std::nullopt)
     {
         resource_container<texture_implementation>* cell = _resources.get_or_create_by_path(path, [&] {
-            return fetch_texture_cell(path, etc2_path, s3tc_path);
+            return fetch_texture_async(path, etc2_path, s3tc_path);
         });
 
         return texture_object { cell };

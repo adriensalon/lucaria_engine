@@ -18,11 +18,6 @@ namespace detail {
             return _fetched.has_value();
         }
 
-        [[nodiscard]] bool is_loading() const
-        {
-            return _fetched.is_loading();
-        }
-
         [[nodiscard]] std::uint32_t get_version() const
         {
             return _current_version.load(std::memory_order_acquire);

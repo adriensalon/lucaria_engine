@@ -21,8 +21,8 @@ namespace detail {
         image_implementation(image_implementation&& other) noexcept = default;
         image_implementation& operator=(image_implementation&& other) noexcept = default;
 
-        image_implementation(const std::vector<char>& bytes);
         image_implementation(image_data&& data);
+        image_implementation(const std::vector<char>& bytes);
 
         image_data data;
     };
@@ -37,11 +37,6 @@ namespace detail {
     private:
         resource_manager<image_implementation> _resources = {};
     };
-
-    [[nodiscard]] async_container<image_implementation> fetch_image_cell_async(
-        const std::filesystem::path& path,
-        const std::optional<std::filesystem::path>& etc2_path,
-        const std::optional<std::filesystem::path>& s3tc_path);
 
 }
 
