@@ -66,8 +66,8 @@ private:
     std::function<void()> _imgui_callback = nullptr;
     std::optional<refresh_mode> _refresh_mode = std::nullopt;
     ImGuiContext* _imgui_context = nullptr;
-    std::optional<detail::texture_implementation> _imgui_color_texture = {};
-    std::unique_ptr<framebuffer> _imgui_framebuffer = nullptr;
+    std::optional<detail::texture_implementation> _imgui_color_texture = std::nullopt;
+    std::optional<detail::framebuffer_implementation> _imgui_framebuffer = std::nullopt;
     friend struct rendering_system;
 };
 

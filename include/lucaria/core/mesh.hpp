@@ -32,25 +32,16 @@ namespace detail {
         mesh_implementation& operator=(mesh_implementation&& other);
         ~mesh_implementation();
 
-        mesh_implementation(const geometry_implementation& from);
-        void update_attribute(const geometry_implementation& from, const mesh_attribute attribute, const glm::uint size, const glm::uint offset = 0);
-        void update_indices(const geometry_implementation& from, const glm::uint size, const glm::uint offset = 0);
+        mesh_implementation(const geometry_implementation& geometry);
+        void update_attribute(const geometry_implementation& geometry, const mesh_attribute attribute, const glm::uint size, const glm::uint offset = 0);
+        void update_indices(const geometry_implementation& geometry, const glm::uint size, const glm::uint offset = 0);
         [[nodiscard]] glm::uint get_size() const;
         [[nodiscard]] glm::uint get_array_handle() const;
         [[nodiscard]] glm::uint get_elements_handle() const;
         [[nodiscard]] const std::unordered_map<mesh_attribute, glm::uint>& get_attribute_handles() const;
         [[nodiscard]] const std::vector<glm::mat4>& get_invposes() const;
 
-    private:
-		mesh_implementation_opengl _opengl_impl;
-    };
-
-    struct mesh_manager {
-        mesh_object create(const geometry_implementation& geometry);
-        mesh_object fetch(const std::filesystem::path& path);
-
-    private:
-        resource_manager<mesh_implementation> _resources = {};
+		mesh_implementation_opengl implementation_opengl;
     };
 
 }
@@ -63,7 +54,7 @@ struct mesh_object {
 	mesh_object& operator=(mesh_object&& other) = default;
 
     /// TODO GO CONTEXT
-    static mesh_object create(const detail::geometry_implementation& geometry);
+    static mesh_object create(const geometry_object geometry);
 
     /// TODO GO CONTEXT
     static mesh_object fetch(const std::filesystem::path& path);
@@ -76,11 +67,8 @@ struct mesh_object {
 	[[nodiscard]] explicit operator bool() const;
 
 private:
-    detail::resource_container<detail::mesh_implementation>* _cell = nullptr;
-    explicit mesh_object(detail::resource_container<detail::mesh_implementation>* cell);
-    friend struct detail::mesh_manager;
-    friend struct program;
-    friend struct framebuffer;
+    detail::resource_container<detail::mesh_implementation>* _resource = nullptr;
+    explicit mesh_object(detail::resource_container<detail::mesh_implementation>* resource);
     friend struct rendering_system;
 };
 
@@ -99,9 +87,7 @@ namespace _detail {
 
         guizmo_mesh(const detail::geometry_implementation& from);
         guizmo_mesh(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
-
         void update(const std::vector<glm::vec3>& positions, const std::vector<glm::uvec2>& indices);
-
         [[nodiscard]] glm::uint get_size() const;
         [[nodiscard]] glm::uint get_array_handle() const;
         [[nodiscard]] glm::uint get_elements_handle() const;

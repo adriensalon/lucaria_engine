@@ -15,27 +15,11 @@ passive_rigidbody_component::~passive_rigidbody_component()
     }
 }
 
-passive_rigidbody_component& passive_rigidbody_component::use_shape(shape& from)
+passive_rigidbody_component& passive_rigidbody_component::use_shape(const shape_object shape)
 {
-    _shape.emplace(from);
-    btCollisionShape* _collision_shape = _shape.value().get_handle();
-    if (_is_added) {
-        _dynamics_world->removeRigidBody(_rigidbody.get());
-        _rigidbody->setCollisionShape(_collision_shape);
-    } else {
-        _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1)));
-        _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(0, _state.get(), _collision_shape));
-        _rigidbody->setCollisionFlags(btCollisionObject::CF_STATIC_OBJECT);
-    }
-    _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-    _is_added = true;
-    return *this;
-}
-
-passive_rigidbody_component& passive_rigidbody_component::use_shape(detail::async_container<shape>& from)
-{
-    _shape.emplace(from, [this]() {
-        btCollisionShape* _collision_shape = _shape.value().get_handle();
+    _shape = shape;
+    _shape._resource->on_ready([this]() {
+        btCollisionShape* _collision_shape = _shape._resource->get().collision_shape.get();
         if (_is_added) {
             _dynamics_world->removeRigidBody(_rigidbody.get());
             _rigidbody->setCollisionShape(_collision_shape);
@@ -80,27 +64,11 @@ passive_rigidbody_component& passive_rigidbody_component::set_mask_layer(const c
     return *this;
 }
 
-kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(shape& from)
+kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(const shape_object shape)
 {
-    _shape.emplace(from);
-    btCollisionShape* _collision_shape = _shape.value().get_handle();
-    if (_is_added) {
-        _dynamics_world->removeCollisionObject(_ghost.get());
-        _ghost->setCollisionShape(_collision_shape);
-    } else {
-        _ghost = std::make_unique<btPairCachingGhostObject>();
-        _ghost->setCollisionShape(_collision_shape);
-        _ghost->setCollisionFlags(btCollisionObject::CF_KINEMATIC_OBJECT);
-    }
-    _dynamics_world->addCollisionObject(_ghost.get(), _group, _mask);
-    _is_added = true;
-    return *this;
-}
-
-kinematic_rigidbody_component& kinematic_rigidbody_component::use_shape(detail::async_container<shape>& from)
-{
-    _shape.emplace(from, [this]() {
-        btCollisionShape* _collision_shape = _shape.value().get_handle();
+    _shape = shape;
+    _shape._resource->on_ready([this]() {
+        btCollisionShape* _collision_shape = _shape._resource->get().collision_shape.get();
         if (_is_added) {
             _dynamics_world->removeCollisionObject(_ghost.get());
             _ghost->setCollisionShape(_collision_shape);
@@ -150,32 +118,11 @@ const std::vector<collision>& kinematic_rigidbody_component::get_collisions() co
     return _collisions;
 }
 
-dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(shape& from)
+dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(const shape_object shape)
 {
-    _shape.emplace(from);
-    btCollisionShape* _collision_shape = _shape.value().get_handle();
-    if (_is_added) {
-        _dynamics_world->removeRigidBody(_rigidbody.get());
-        _rigidbody->setCollisionShape(_collision_shape);
-    } else {
-        _state = std::make_unique<btDefaultMotionState>(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
-        _rigidbody = std::make_unique<btRigidBody>(btRigidBody::btRigidBodyConstructionInfo(_mass, _state.get(), _collision_shape, btVector3(0, 0, 0)));
-        _rigidbody->setActivationState(DISABLE_DEACTIVATION);
-        _rigidbody->setFriction(_friction);
-        _rigidbody->setAngularFactor(convert_bullet(_angular_factor));
-        _rigidbody->setCcdMotionThreshold(0);
-        _rigidbody->setCcdSweptSphereRadius(0);
-        _rigidbody->setCollisionFlags(btCollisionObject::CF_DYNAMIC_OBJECT);
-    }
-    _dynamics_world->addRigidBody(_rigidbody.get(), _group, _mask);
-    _is_added = true;
-    return *this;
-}
-
-dynamic_rigidbody_component& dynamic_rigidbody_component::use_shape(detail::async_container<shape>& from)
-{
-    _shape.emplace(from, [this]() {
-        btCollisionShape* _collision_shape = _shape.value().get_handle();
+    _shape = shape;
+    _shape._resource->on_ready([this]() {
+        btCollisionShape* _collision_shape = _shape._resource->get().collision_shape.get();
         if (_is_added) {
             _dynamics_world->removeRigidBody(_rigidbody.get());
             _rigidbody->setCollisionShape(_collision_shape);

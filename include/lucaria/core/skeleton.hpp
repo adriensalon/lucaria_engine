@@ -2,41 +2,52 @@
 
 #include <ozz/animation/runtime/skeleton.h>
 
-#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/platform.hpp>
+#include <lucaria/core/resource.hpp>
 
 namespace lucaria {
 
-/// @brief Represents a runtime skeleton
-struct skeleton {
-    LUCARIA_DELETE_DEFAULT(skeleton)
-    skeleton(const skeleton& other) = delete;
-    skeleton& operator=(const skeleton& other) = delete;
-    skeleton(skeleton&& other) = default;
-    skeleton& operator=(skeleton&& other) = default;
+struct skeleton_object;
 
-    /// @brief Loads a skeleton from bytes synchronously
-    /// @param data_bytes bytes to load from
-    skeleton(const std::vector<char>& data_bytes);
+namespace detail {
 
-    /// @brief Loads a skeleton from a file synchronously
-    /// @param data_path path to load from
-    skeleton(const std::filesystem::path& data_path);
+    struct skeleton_implementation {
+        LUCARIA_DELETE_DEFAULT(skeleton_implementation)
+        skeleton_implementation(const skeleton_implementation& other) = delete;
+        skeleton_implementation& operator=(const skeleton_implementation& other) = delete;
+        skeleton_implementation(skeleton_implementation&& other) = default;
+        skeleton_implementation& operator=(skeleton_implementation&& other) = default;
 
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] ozz::animation::Skeleton& get_handle();
-    
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] const ozz::animation::Skeleton& get_handle() const;
+        skeleton_implementation(const std::vector<char>& bytes);
+        skeleton_implementation(ozz::animation::Skeleton&& skeleton);
+
+        ozz::animation::Skeleton skeleton;
+    };
+
+}
+
+struct skeleton_object {
+    skeleton_object() = default;
+    skeleton_object(const skeleton_object& other) = default;
+    skeleton_object& operator=(const skeleton_object& other) = default;
+    skeleton_object(skeleton_object&& other) = default;
+    skeleton_object& operator=(skeleton_object&& other) = default;
+
+    /// TODO GO CONTEXT
+    static skeleton_object fetch(const std::filesystem::path& path);
+
+    /// @brief Checks if the skeleton is ready to be used
+    /// @return true if the skeleton is ready, false otherwise
+    [[nodiscard]] bool has_value() const;
+
+    /// @brief Conversion operator for the has_value member function
+    [[nodiscard]] explicit operator bool() const;
 
 private:
-    ozz::animation::Skeleton _handle;
+    detail::resource_container<detail::skeleton_implementation>* _resource = nullptr;
+    explicit skeleton_object(detail::resource_container<detail::skeleton_implementation>* resource);
+    friend struct animator_component;
+    friend struct motion_system;
 };
-
-/// @brief Loads a skeleton from a file asynchronously
-/// @param data_path path to load from
-[[nodiscard]] detail::async_container<skeleton> fetch_skeleton(const std::filesystem::path& data_path);
 
 }

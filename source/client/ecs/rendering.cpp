@@ -121,7 +121,7 @@ namespace {
     static bool show_free_camera = false;
 
     // post processing
-    static std::optional<framebuffer> scene_framebuffer;
+    static std::optional<detail::framebuffer_implementation> scene_framebuffer;
     static std::optional<detail::texture_implementation> scene_color_texture = std::nullopt;
     static std::optional<renderbuffer> scene_depth_renderbuffer;
 
@@ -558,7 +558,7 @@ struct rendering_system {
 
         // setup screen buffers
         if (!scene_framebuffer) {
-            scene_framebuffer = framebuffer();
+            scene_framebuffer.emplace();
         }
         if (!scene_color_texture) {
             scene_color_texture.emplace(_screen_size);
@@ -718,7 +718,7 @@ struct rendering_system {
             scene.view<blockout_model_component, transform_component>().each([&](blockout_model_component& _model, transform_component& _transform) {
                 if (_model._mesh) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
+                    const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
                     _blockout_program.use();
                     _blockout_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                     _blockout_program.bind_attribute("vert_normal", _mesh, detail::mesh_attribute::normal);
@@ -729,7 +729,7 @@ struct rendering_system {
 
             scene.view<blockout_model_component>(entt::exclude<transform_component>).each([&](blockout_model_component& _model) {
                 if (_model._mesh) {
-                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
+                    const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
                     _blockout_program.use();
                     _blockout_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                     _blockout_program.bind_attribute("vert_normal", _mesh, detail::mesh_attribute::normal);
@@ -757,8 +757,8 @@ struct rendering_system {
             scene.view<unlit_model_component, transform_component>(entt::exclude<animator_component>).each([&](unlit_model_component& _model, transform_component& _transform) {
                 if (_model._mesh && _model._color) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
-                    const detail::texture_implementation& _color = _model._color._cell->get();
+                    const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
+                    const detail::texture_implementation& _color = _model._color._resource->get();
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
@@ -770,8 +770,8 @@ struct rendering_system {
 
             scene.view<unlit_model_component>(entt::exclude<transform_component, animator_component>).each([&](unlit_model_component& _model) {
                 if (_model._mesh && _model._color) {
-                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
-                    const detail::texture_implementation& _color = _model._color._cell->get();
+                    const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
+                    const detail::texture_implementation& _color = _model._color._resource->get();
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
@@ -799,8 +799,8 @@ struct rendering_system {
             scene.view<unlit_model_component, transform_component, animator_component>().each([&](unlit_model_component& _model, transform_component& _transform, animator_component& animator) {
                 if (_model._mesh && _model._color && animator._skeleton.has_value()) {
                     const glm::mat4 _model_view_projection = camera_view_projection * _transform._transform;
-                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
-                    const detail::texture_implementation& _color = _model._color._cell->get();
+                    const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
+                    const detail::texture_implementation& _color = _model._color._resource->get();
                     _unlit_skinned_program.use();
                     _unlit_skinned_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                     _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
@@ -816,8 +816,8 @@ struct rendering_system {
 
             scene.view<unlit_model_component, animator_component>(entt::exclude<transform_component>).each([&](unlit_model_component& _model, animator_component& animator) {
                 if (_model._mesh && _model._color && animator._skeleton.has_value()) {
-                    const detail::mesh_implementation& _mesh = _model._mesh._cell->get();
-                    const detail::texture_implementation& _color = _model._color._cell->get();
+                    const detail::mesh_implementation& _mesh = _model._mesh._resource->get();
+                    const detail::texture_implementation& _color = _model._color._resource->get();
                     _unlit_skinned_program.use();
                     _unlit_skinned_program.bind_attribute("vert_position", _mesh, detail::mesh_attribute::position);
                     _unlit_skinned_program.bind_attribute("vert_texcoord", _mesh, detail::mesh_attribute::texcoord);
@@ -848,7 +848,7 @@ struct rendering_system {
 
                     std::optional<glm::vec2> _raycasted_uvs;
                     if (interface._use_interaction) {
-                        _raycasted_uvs = viewport_raycast(interface._viewport_geometry._cell->get());
+                        _raycasted_uvs = viewport_raycast(interface._viewport_geometry._resource->get());
                         if (_raycasted_uvs) {
                             interface._interaction_screen_position = {
                                 (_raycasted_uvs.value().x) * interface._viewport_size.x,
@@ -870,7 +870,7 @@ struct rendering_system {
                     interface._imgui_callback();
 
                     if (interface._use_interaction && interface._interaction_texture.has_value()) {
-                        const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture._cell->get().get_handle()));
+                        const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture._resource->get().get_handle()));
                         if (_raycasted_uvs) {
                             const ImVec2 _cursor_min(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
                             const ImVec2 _cursor_max(
@@ -955,7 +955,7 @@ struct rendering_system {
         detail::mesh_implementation& _post_processing_mesh = _persistent_post_processing_mesh.value();
         program& _post_processing_program = _persistent_post_processing_program.value();
 
-        framebuffer::use_default();
+        detail::framebuffer_implementation::use_default();
 
         _post_processing_program.use();
         _post_processing_program.bind_attribute("vert_position", _post_processing_mesh, detail::mesh_attribute::position);

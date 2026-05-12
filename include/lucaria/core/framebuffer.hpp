@@ -2,51 +2,28 @@
 
 #include <lucaria/core/renderbuffer.hpp>
 
+#include <lucaria/backend/opengl/framebuffer_opengl.hpp>
+
 namespace lucaria {
+namespace detail {
 
-/// @brief Represents a runtime framebuffer on the device
-struct framebuffer {
-    framebuffer(const framebuffer& other) = delete;
-    framebuffer& operator=(const framebuffer& other) = delete;
-    framebuffer(framebuffer&& other);
-    framebuffer& operator=(framebuffer&& other);
-    ~framebuffer();
+    struct framebuffer_implementation {
+        framebuffer_implementation(const framebuffer_implementation& other) = delete;
+        framebuffer_implementation& operator=(const framebuffer_implementation& other) = delete;
+        framebuffer_implementation(framebuffer_implementation&& other);
+        framebuffer_implementation& operator=(framebuffer_implementation&& other);
+        ~framebuffer_implementation();
 
-    framebuffer();
+        framebuffer_implementation();
+        static void use_default();
+        void use();
+        void bind_color(const detail::texture_implementation& color);
+        void bind_color(renderbuffer& color);
+        void bind_depth(detail::texture_implementation& depth);
+        void bind_depth(renderbuffer& depth);
+		
+		framebuffer_implementation_opengl implementation_opengl;
+    };
 
-    /// @brief Uses the default framebuffer for draw calls
-    static void use_default();
-
-    /// @brief Uses this framebuffer for draw calls
-    void use();
-
-    /// @brief Binds a texture object for the color attachment of this framebuffer
-    /// @param color the texture object to bind
-    void bind_color(const detail::texture_implementation& color);
-
-    /// @brief Binds a renderbuffer object for the color attachment of this framebuffer
-    /// @param color the renderbuffer object to bind
-    void bind_color(renderbuffer& color);
-
-    /// @brief Binds a texture object for the depth attachment of this framebuffer
-    /// @param depth the texture object to bind
-    void bind_depth(detail::texture_implementation& depth);
-
-    /// @brief Binds a renderbuffer object for the depth attachment of this framebuffer
-    /// @param depth the renderbuffer object to bind
-    void bind_depth(renderbuffer& depth);
-    
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] glm::uint get_handle() const;
-
-private:
-    bool _is_owning;
-    glm::uint _handle;
-    std::optional<glm::uint> _texture_color_id;
-    std::optional<glm::uint> _texture_depth_id;
-    std::optional<glm::uint> _renderbuffer_color_id;
-    std::optional<glm::uint> _renderbuffer_depth_id;
-};
-
+}
 }

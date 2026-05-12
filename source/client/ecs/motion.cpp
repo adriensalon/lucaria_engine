@@ -19,55 +19,57 @@ void _system_guizmos_motion();
 extern void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVector3& color);
 #endif
 
-namespace {
+static const glm::vec3 _world_up = glm::vec3(0, 1, 0);
+static const glm::vec3 _world_forward = glm::vec3(0, 0, -1);
 
-    static const glm::vec3 _world_up = glm::vec3(0, 1, 0);
-    static const glm::vec3 _world_forward = glm::vec3(0, 0, -1);
+namespace detail {
+    namespace {
 
-    [[nodiscard]] glm::mat4 _sample_motion_track(const animation_motion_track& track, const glm::float32 ratio)
-    {
-        // position sampling
-        ozz::math::Transform _ozz_affine_transform;
-        ozz::animation::Float3TrackSamplingJob _position_sampler;
-        _position_sampler.track = &track.get_translation_handle();
-        _position_sampler.result = &_ozz_affine_transform.translation;
-        _position_sampler.ratio = ratio;
-        if (!_position_sampler.Run()) {
-            LUCARIA_RUNTIME_ERROR("Failed to run vec3 track sampling job")
+        [[nodiscard]] glm::mat4 _sample_motion_track(const motion_track_implementation& track, const glm::float32 ratio)
+        {
+            // position sampling
+            ozz::math::Transform _ozz_affine_transform;
+            ozz::animation::Float3TrackSamplingJob _position_sampler;
+            _position_sampler.track = &track.translation_track;
+            _position_sampler.result = &_ozz_affine_transform.translation;
+            _position_sampler.ratio = ratio;
+            if (!_position_sampler.Run()) {
+                LUCARIA_RUNTIME_ERROR("Failed to run vec3 track sampling job")
+            }
+
+            // rotation sampling
+            ozz::animation::QuaternionTrackSamplingJob _rotation_sampler;
+            _rotation_sampler.track = &track.rotation_track;
+            _rotation_sampler.result = &_ozz_affine_transform.rotation;
+            _rotation_sampler.ratio = ratio;
+            if (!_rotation_sampler.Run()) {
+                LUCARIA_RUNTIME_ERROR("Failed to run quat track sampling job")
+            }
+
+            _ozz_affine_transform.scale = ozz::math::Float3::one();
+            return convert(ozz::math::Float4x4::FromAffine(_ozz_affine_transform));
         }
 
-        // rotation sampling
-        ozz::animation::QuaternionTrackSamplingJob _rotation_sampler;
-        _rotation_sampler.track = &track.get_rotation_handle();
-        _rotation_sampler.result = &_ozz_affine_transform.rotation;
-        _rotation_sampler.ratio = ratio;
-        if (!_rotation_sampler.Run()) {
-            LUCARIA_RUNTIME_ERROR("Failed to run quat track sampling job")
+        [[nodiscard]] glm::mat4 _compute_motion_delta(const motion_track_implementation& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 weight, const bool has_looped)
+        {
+            // base delta
+            const glm::mat4 _new_motion_transform = _sample_motion_track(track, time_ratio);
+            const glm::mat4 _last_motion_transform = _sample_motion_track(track, last_time_ratio);
+            glm::mat4 _delta_motion_transform = _new_motion_transform * glm::inverse(_last_motion_transform);
+
+            // loop delta
+            if (has_looped) {
+                const glm::mat4 _end_motion_transform = _sample_motion_track(track, 1.f);
+                const glm::mat4 _begin_motion_transform = _sample_motion_track(track, 0.f);
+                _delta_motion_transform = _end_motion_transform * glm::inverse(_begin_motion_transform) * _delta_motion_transform;
+            }
+
+            // weight interpolation
+            _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, weight);
+            return _delta_motion_transform;
         }
 
-        _ozz_affine_transform.scale = ozz::math::Float3::one();
-        return convert(ozz::math::Float4x4::FromAffine(_ozz_affine_transform));
     }
-
-    [[nodiscard]] glm::mat4 _compute_motion_delta(const animation_motion_track& track, const glm::float32 time_ratio, const glm::float32 last_time_ratio, const glm::float32 weight, const bool has_looped)
-    {
-        // base delta
-        const glm::mat4 _new_motion_transform = _sample_motion_track(track, time_ratio);
-        const glm::mat4 _last_motion_transform = _sample_motion_track(track, last_time_ratio);
-        glm::mat4 _delta_motion_transform = _new_motion_transform * glm::inverse(_last_motion_transform);
-
-        // loop delta
-        if (has_looped) {
-            const glm::mat4 _end_motion_transform = _sample_motion_track(track, 1.f);
-            const glm::mat4 _begin_motion_transform = _sample_motion_track(track, 0.f);
-            _delta_motion_transform = _end_motion_transform * glm::inverse(_begin_motion_transform) * _delta_motion_transform;
-        }
-
-        // weight interpolation
-        _delta_motion_transform = glm::interpolate(glm::mat4(1.f), _delta_motion_transform, weight);
-        return _delta_motion_transform;
-    }
-
 }
 
 struct motion_system {
@@ -88,8 +90,8 @@ struct motion_system {
                     _controller._time_ratio = glm::mod(_controller._time_ratio, 1.f);
 
                     // fire events
-                    if (_controller._is_playing && animator._event_tracks[_pair.first].has_value()) {
-                        for (const event_data& _event : animator._event_tracks[_pair.first].value().data.events) {
+                    if (_controller._is_playing && animator._event_tracks[_pair.first]) {
+                        for (const event_data& _event : animator._event_tracks[_pair.first]._resource->get().data.events) {
                             if (_controller._last_time_ratio <= _controller._time_ratio
                                     ? (_controller._last_time_ratio < _event.time_normalized) && (_event.time_normalized <= _controller._time_ratio)
                                     : (_controller._last_time_ratio < _event.time_normalized) || (_event.time_normalized <= _controller._time_ratio)) {
@@ -109,16 +111,16 @@ struct motion_system {
     {
         each_scene([](entt::registry& scene) {
             scene.view<animator_component>().each([](animator_component& animator) {
-                if (animator._skeleton.has_value()) {
+                if (animator._skeleton) {
 
                     // sampling
                     ozz::vector<ozz::animation::BlendingJob::Layer> _blend_layers;
-                    for (std::pair<const std::string, _detail::OLDfetched_container<animation>>& _pair : animator._animations) {
-                        if (_pair.second.has_value()) {
+                    for (std::pair<const std::string, animation_object>& _pair : animator._animations) {
+                        if (_pair.second) {
                             const animation_controller& _controller = animator._controllers[_pair.first];
                             ozz::vector<ozz::math::SoaTransform>& _local_transforms = animator._local_transforms[_pair.first];
                             ozz::animation::SamplingJob sampling_job;
-                            sampling_job.animation = &_pair.second.value().get_handle();
+                            sampling_job.animation = &_pair.second._resource->get().animation;
                             sampling_job.context = animator._sampling_context.get();
                             sampling_job.ratio = _controller._time_ratio;
                             sampling_job.output = make_span(_local_transforms);
@@ -134,7 +136,7 @@ struct motion_system {
                     }
 
                     // blending
-                    ozz::animation::Skeleton& _skeleton = animator._skeleton.value().get_handle();
+                    ozz::animation::Skeleton& _skeleton = animator._skeleton._resource->get().skeleton;
                     ozz::animation::BlendingJob _blending_job;
                     _blending_job.threshold = 0.1f; // TODO let user set parameter
                     _blending_job.additive_layers = {};
@@ -163,12 +165,12 @@ struct motion_system {
         // apply to transform if no dynamic rigidbody
         each_scene([](entt::registry& scene) {
             scene.view<const animator_component, transform_component>(entt::exclude<dynamic_rigidbody_component>).each([](const animator_component& _animator, transform_component& _transform) {
-                for (const std::pair<const std::string, _detail::OLDfetched_container<animation_motion_track>>& _pair : _animator._motion_tracks) {
-                    if (_pair.second.has_value()) {
+                for (const std::pair<const std::string, motion_track_object>& _pair : _animator._motion_tracks) {
+                    if (_pair.second) {
                         const animation_controller& _controller = _animator._controllers.at(_pair.first);
                         if (_controller._weight > 0.f) {
-                            const animation_motion_track& _track = _pair.second.value();
-                            const glm::mat4 _delta_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
+                            const detail::motion_track_implementation& _track = _pair.second._resource->get();
+                            const glm::mat4 _delta_transform = detail::_compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
                             _transform.set_transform_relative(_delta_transform);
                         }
                     }
@@ -180,9 +182,9 @@ struct motion_system {
         const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
         each_scene([_delta_time](entt::registry& scene) {
             scene.view<const animator_component, transform_component, dynamic_rigidbody_component>().each([_delta_time](const animator_component& animator, transform_component& transform, dynamic_rigidbody_component& rigidbody) {
-                if (rigidbody._shape.has_value()) {
+                if (rigidbody._shape) {
                     btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
-                    const glm::mat4 _transform_matrix = rigidbody._shape.value().get_feet_to_center() * transform._transform;
+                    const glm::mat4 _transform_matrix = rigidbody._shape._resource->get().feet_to_center * transform._transform;
                     const glm::vec3 _current_position = glm::vec3(_transform_matrix[3]);
                     const glm::quat _current_rotation = glm::quat_cast(_transform_matrix);
                     const btTransform _bullet_transform = convert_bullet(_transform_matrix);
@@ -209,12 +211,12 @@ struct motion_system {
                     glm::vec3 _sum_velocity_xy = glm::vec3(0);
                     glm::float32 _sum_velocity_yaw = 0.f;
                     glm::float32 _sum_blend_size = 0.f;
-                    for (const std::pair<const std::string, _detail::OLDfetched_container<animation_motion_track>>& _pair : animator._motion_tracks) {
-                        if (_pair.second.has_value()) {
-                            const animation_motion_track& _track = _pair.second.value();
+                    for (const std::pair<const std::string, motion_track_object>& _pair : animator._motion_tracks) {
+                        if (_pair.second) {
+                            const detail::motion_track_implementation& _track = _pair.second._resource->get();
                             const animation_controller& _controller = animator._controllers.at(_pair.first);
                             if (_controller._weight > 0.f) {
-                                const glm::mat4 _delta_motion_transform = _compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
+                                const glm::mat4 _delta_motion_transform = detail::_compute_motion_delta(_track, _controller._time_ratio, _controller._last_time_ratio, _controller._weight, _controller._has_looped);
                                 const glm::vec3 _delta_position_xy = project_on_plane(_current_rotation * glm::vec3(_delta_motion_transform[3]), _world_up);
                                 const glm::vec3 _linear_velocity_xy = _delta_position_xy / _delta_time;
                                 const glm::vec3 _forward_xy = glm::normalize(project_on_plane(glm::normalize(glm::quat_cast(_delta_motion_transform) * _world_forward), _world_up));
@@ -269,12 +271,12 @@ struct motion_system {
 
             // animator guizmos without transforms
             scene.view<animator_component>(entt::exclude<transform_component>).each([](animator_component& animator) {
-                if (animator._skeleton.has_value()) {
+                if (animator._skeleton) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
                     if (_model_transforms.empty()) {
                         return;
                     }
-                    const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
+                    const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton._resource->get().skeleton.joint_parents();
                     if (_model_transforms.size() != _joint_parents.size()) {
                         LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                     }
@@ -294,12 +296,12 @@ struct motion_system {
 
             // animator guizmos with transforms
             scene.view<animator_component, transform_component>().each([](animator_component& animator, transform_component& transform) {
-                if (animator._skeleton.has_value()) {
+                if (animator._skeleton) {
                     const ozz::vector<ozz::math::Float4x4>& _model_transforms = animator._model_transforms;
                     if (_model_transforms.empty()) {
                         return;
                     }
-                    const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton.value().get_handle().joint_parents();
+                    const ozz::span<const std::int16_t>& _joint_parents = animator._skeleton._resource->get().skeleton.joint_parents();
                     if (_model_transforms.size() != _joint_parents.size()) {
                         LUCARIA_RUNTIME_ERROR("Mismatch between model transforms and joint parents sizes")
                     }

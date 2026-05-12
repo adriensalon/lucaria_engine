@@ -54,6 +54,11 @@ namespace detail {
             _fetched.on_ready(std::move(callback));
         }
 
+        void on_ready(std::function<void()> callback) const
+        {
+            _fetched.on_ready(std::move(callback));
+        }
+
     private:
         async_container<CellType> _fetched = {};
         std::optional<std::filesystem::path> _origin_path = {};

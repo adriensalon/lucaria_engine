@@ -133,7 +133,7 @@ struct dynamics_system {
                 (void)_collected;
             });
             scene.view<passive_rigidbody_component, transform_component>().each([](passive_rigidbody_component& collider, transform_component& transform) {
-                if (!collider._shape.has_value()) {
+                if (!collider._shape) {
                     return;
                 }
                 // collider._rigidbody->setInterpolationWorldTransform(convert_bullet(transform._transform));
@@ -144,7 +144,7 @@ struct dynamics_system {
         // update kinematic rigidbody transforms
         each_scene([&](entt::registry& scene) {
             scene.view<kinematic_rigidbody_component, transform_component>().each([](kinematic_rigidbody_component& rigidbody, transform_component& transform) {
-                if (!rigidbody._shape.has_value()) {
+                if (!rigidbody._shape) {
                     return;
                 }
                 // rigidbody._ghost->setInterpolationWorldTransform(convert_bullet(transform._transform));
@@ -156,7 +156,7 @@ struct dynamics_system {
         const glm::float32 _delta_time = static_cast<glm::float32>(get_time_delta());
         each_scene([&](entt::registry& scene) {
             scene.view<dynamic_rigidbody_component>().each([&](dynamic_rigidbody_component& rigidbody) {
-                if (!rigidbody._shape.has_value()) {
+                if (!rigidbody._shape) {
                     return;
                 }
                 btRigidBody* _bullet_rigidbody = rigidbody._rigidbody.get();
@@ -252,7 +252,7 @@ struct dynamics_system {
             scene.view<transform_component, dynamic_rigidbody_component>().each([](transform_component& transform, dynamic_rigidbody_component& rigidbody) {
                 // const glm::mat4 _transform = convert(rigidbody._rigidbody->getInterpolationWorldTransform());
                 const glm::mat4 _transform = convert(rigidbody._rigidbody->getWorldTransform());
-                const glm::mat4 _center_to_feet = rigidbody._shape.value().get_center_to_feet();
+                const glm::mat4 _center_to_feet = rigidbody._shape._resource->get().center_to_feet;
                 transform.set_transform_warp(_transform * _center_to_feet);
                 rigidbody._last_position = transform.get_position();
                 // rigidbody._translation_speed = convert(rigidbody._rigidbody->getInterpolationLinearVelocity());

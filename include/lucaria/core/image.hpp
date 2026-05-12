@@ -4,7 +4,6 @@
 #include <optional>
 
 #include <lucaria/common/image_data.hpp>
-#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/resource.hpp>
 
@@ -21,21 +20,10 @@ namespace detail {
         image_implementation(image_implementation&& other) noexcept = default;
         image_implementation& operator=(image_implementation&& other) noexcept = default;
 
-        image_implementation(image_data&& data);
         image_implementation(const std::vector<char>& bytes);
+        image_implementation(image_data&& data);
 
         image_data data;
-    };
-
-    struct image_manager {
-        image_object create(const glm::uvec2 size);
-        image_object fetch(
-            const std::filesystem::path& path,
-            const std::optional<std::filesystem::path>& etc2_path,
-            const std::optional<std::filesystem::path>& s3tc_path);
-
-    private:
-        resource_manager<image_implementation> _resources = {};
     };
 
 }
@@ -67,6 +55,9 @@ struct image_object {
     /// @return true if the image is ready, false otherwise
     [[nodiscard]] bool has_value() const;
 
+    /// @brief Conversion operator for the has_value member function
+    [[nodiscard]] explicit operator bool() const;
+
     /// @brief Resizes the image to the specified size
     /// @param size the new size of the image
     void resize(const glm::uvec2 size);
@@ -81,13 +72,9 @@ struct image_object {
     /// @return the size of the image
     [[nodiscard]] glm::uvec2 get_size() const;
 
-    /// @brief Conversion operator for the has_value member function
-    [[nodiscard]] explicit operator bool() const;
-
 private:
-    detail::resource_container<detail::image_implementation>* _cell = nullptr;
-    explicit image_object(detail::resource_container<detail::image_implementation>* cell);
-    friend struct detail::image_manager;
+    detail::resource_container<detail::image_implementation>* _resource = nullptr;
+    explicit image_object(detail::resource_container<detail::image_implementation>* resource);
 };
 
 }

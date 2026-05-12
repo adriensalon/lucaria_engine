@@ -16,15 +16,14 @@ struct passive_rigidbody_component {
     passive_rigidbody_component& operator=(passive_rigidbody_component&& other) = default;
     ~passive_rigidbody_component();
 
-    passive_rigidbody_component& use_shape(shape& from);
-    passive_rigidbody_component& use_shape(detail::async_container<shape>& from);
+    passive_rigidbody_component& use_shape(const shape_object shape);
 
     passive_rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
     passive_rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
 
 private:
     bool _is_added = false;
-    _detail::OLDfetched_container<shape> _shape = {};
+    shape_object _shape = {};
     std::unique_ptr<btDefaultMotionState> _state = nullptr;
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     std::int16_t _group = 0;
@@ -39,8 +38,7 @@ struct kinematic_rigidbody_component {
     kinematic_rigidbody_component(kinematic_rigidbody_component&& other) = default;
     kinematic_rigidbody_component& operator=(kinematic_rigidbody_component&& other) = default;
 
-    kinematic_rigidbody_component& use_shape(shape& from);
-    kinematic_rigidbody_component& use_shape(detail::async_container<shape>& from);
+    kinematic_rigidbody_component& use_shape(const shape_object shape);
 
     kinematic_rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
     kinematic_rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
@@ -51,7 +49,7 @@ struct kinematic_rigidbody_component {
 
 private:
     bool _is_added = false;
-    _detail::OLDfetched_container<shape> _shape = {};
+    shape_object _shape = {};
     std::unique_ptr<btPairCachingGhostObject> _ghost = nullptr;
     std::int16_t _group = 0;
     std::int16_t _mask = 0;
@@ -68,8 +66,7 @@ struct dynamic_rigidbody_component {
     dynamic_rigidbody_component(dynamic_rigidbody_component&&) = default;
     dynamic_rigidbody_component& operator=(dynamic_rigidbody_component&&) = default;
 
-    dynamic_rigidbody_component& use_shape(shape& from);
-    dynamic_rigidbody_component& use_shape(detail::async_container<shape>& from);
+    dynamic_rigidbody_component& use_shape(const shape_object shape);
 
     dynamic_rigidbody_component& set_group_layer(const collision_layer layer, const bool enable = true);
     dynamic_rigidbody_component& set_mask_layer(const collision_layer layer, const bool enable = true);
@@ -89,7 +86,7 @@ struct dynamic_rigidbody_component {
 
 private:
     bool _is_added = false;
-    _detail::OLDfetched_container<shape> _shape = {};
+    shape_object _shape = {};
     std::unique_ptr<btDefaultMotionState> _state = nullptr;
     std::unique_ptr<btRigidBody> _rigidbody = nullptr;
     std::int16_t _group = 0;

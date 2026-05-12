@@ -25,20 +25,7 @@ namespace detail {
         [[nodiscard]] glm::uvec2 get_size() const;
         [[nodiscard]] glm::uint get_handle() const;
 
-    private:
-		texture_implementation_opengl _opengl_impl;
-    };
-
-    struct texture_manager {
-        texture_object create(const detail::image_implementation& image);
-        texture_object create(const glm::uvec2 size);
-        texture_object fetch(
-			const std::filesystem::path& path, 
-			const std::optional<std::filesystem::path>& etc2_path, 
-			const std::optional<std::filesystem::path>& s3tc_path);
-
-    private:
-        resource_manager<texture_implementation> _resources = {};
+		texture_implementation_opengl implementation_opengl;
     };
 
 }
@@ -82,11 +69,8 @@ struct texture_object {
     [[nodiscard]] glm::uvec2 get_size() const;
 
 private:
-    detail::resource_container<detail::texture_implementation>* _cell = nullptr;
-    explicit texture_object(detail::resource_container<detail::texture_implementation>* cell);
-    friend struct program;
-    friend struct framebuffer;
-    friend struct detail::texture_manager;
+    detail::resource_container<detail::texture_implementation>* _resource = nullptr;
+    explicit texture_object(detail::resource_container<detail::texture_implementation>* resource);
     friend struct rendering_system;
 };
 

@@ -3,58 +3,77 @@
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
+#include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/skeleton.hpp>
 
 namespace lucaria {
-    
-extern void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
+
 extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
 
-namespace {
+namespace detail {
+    namespace {
 
-    static void load_skeleton_handle_from_bytes(ozz::animation::Skeleton& handle, const std::vector<char>& data_bytes)
-    {
-        _detail::ozz_bytes_stream _ozz_stream(data_bytes);
-        ozz::io::IArchive _ozz_archive(&_ozz_stream);
-        if (!_ozz_archive.TestTag<ozz::animation::Skeleton>()) {
-            LUCARIA_RUNTIME_ERROR("Failed to load skeleton, archive doesn't contain the expected object type")
-        }
-        _ozz_archive >> handle;
+        static void _load_skeleton_bytes(ozz::animation::Skeleton& handle, const std::vector<char>& data_bytes)
+        {
+            _detail::ozz_bytes_stream _ozz_stream(data_bytes);
+            ozz::io::IArchive _ozz_archive(&_ozz_stream);
+            if (!_ozz_archive.TestTag<ozz::animation::Skeleton>()) {
+                LUCARIA_RUNTIME_ERROR("Failed to load skeleton, archive doesn't contain the expected object type")
+            }
+            _ozz_archive >> handle;
 #if LUCARIA_CONFIG_DEBUG
-        std::cout << "Loaded skeleton with " << handle.num_joints() << " joints." << std::endl;
+            std::cout << "Loaded skeleton with " << handle.num_joints() << " joints." << std::endl;
 #endif
+        }
+
+        static async_container<skeleton_implementation> _fetch_skeleton_async(const std::filesystem::path& data_path)
+        {
+            std::shared_ptr<std::promise<skeleton_implementation>> _promise = std::make_shared<std::promise<skeleton_implementation>>();
+            _fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
+        skeleton_implementation _skeleton(_bytes);
+        _promise->set_value(std::move(_skeleton)); }, true);
+
+            // create skeleton on worker thread is ok
+            return detail::async_container<skeleton_implementation>(_promise->get_future());
+        }
+
+    }
+
+    skeleton_implementation::skeleton_implementation(const std::vector<char>& bytes)
+    {
+        _load_skeleton_bytes(skeleton, bytes);
+    }
+
+    skeleton_implementation::skeleton_implementation(ozz::animation::Skeleton&& skeleton)
+        : skeleton(std::move(skeleton))
+    {
     }
 
 }
 
-skeleton::skeleton(const std::vector<char>& data_bytes)
+skeleton_object skeleton_object::fetch(const std::filesystem::path& path)
 {
-    load_skeleton_handle_from_bytes(_handle, data_bytes);
-}
-
-skeleton::skeleton(const std::filesystem::path& data_path)
-{
-    _load_bytes(data_path, [this](const std::vector<char>& _data_bytes) {
-        load_skeleton_handle_from_bytes(_handle, _data_bytes);
+    detail::resource_container<detail::skeleton_implementation>* _resource = detail::engine_assets().skeletons.get_or_create_by_path(path, [&] {
+        return detail::_fetch_skeleton_async(path);
     });
+
+    return skeleton_object { _resource };
 }
 
-ozz::animation::Skeleton& skeleton::get_handle()
+bool skeleton_object::has_value() const
 {
-    return _handle;
+    return _resource && _resource->is_ready();
 }
 
-detail::async_container<skeleton> fetch_skeleton(const std::filesystem::path& data_path)
+skeleton_object::operator bool() const
 {
-    std::shared_ptr<std::promise<skeleton>> _promise = std::make_shared<std::promise<skeleton>>();
-    _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
-        skeleton _skeleton(_data_bytes);
-        _promise->set_value(std::move(_skeleton));
-    }, true);
+    return has_value();
+}
 
-    // create skeleton on worker thread is ok
-    return detail::async_container<skeleton>(_promise->get_future());
+skeleton_object::skeleton_object(detail::resource_container<detail::skeleton_implementation>* resource)
+    : _resource(resource)
+{
 }
 
 }

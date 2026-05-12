@@ -1,7 +1,9 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
 
+#include <lucaria/core/database.hpp>
 #include <lucaria/core/image.hpp>
+
 
 namespace lucaria {
 
@@ -10,95 +12,7 @@ std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::fi
 
 extern bool _is_etc2_supported;
 extern bool _is_s3tc_supported;
-extern void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
 extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
-namespace {
-
-    static void load_data_from_bytes(image_data& data, const std::vector<char>& data_bytes)
-    {
-        const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&data_bytes));
-        const uint32_t* _data32 = (uint32_t*)_content.data();
-        data.is_compressed_etc = false;
-        data.is_compressed_s3tc = false;
-
-        // S3TC compression
-        if (*_data32 == 0x03525650) {
-            switch (*(_data32 + 2)) {
-            case 7:
-                // std::cout << "PVR DXT1 RGB" << std::endl;
-                data.channels = 3;
-                data.is_compressed_s3tc = true;
-                break;
-            case 11:
-                // std::cout << "PVR DXT5 RGBA" << std::endl;
-                data.channels = 4;
-                data.is_compressed_s3tc = true;
-                break;
-            case 22:
-                // std::cout << "PVR ETC2 RGB" << std::endl;
-                data.channels = 3;
-                data.is_compressed_etc = true;
-                break;
-            case 23:
-                // std::cout << "PVR ETC2 RGBA" << std::endl;
-                data.channels = 4;
-                data.is_compressed_etc = true;
-                break;
-            default:
-                LUCARIA_RUNTIME_ERROR("Invalid S3TC image data")
-                break;
-            }
-            const std::size_t _offset = 52 + *(_data32 + 12);
-            const glm::uint8* _data_ptr = _content.data() + _offset;
-            const std::size_t _data_size = _content.size() - _offset;
-            data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-            data.height = *(_data32 + 6);
-            data.width = *(_data32 + 7);
-
-            // ETC2 compression
-        } else if (*_data32 == 0x58544BAB) {
-            switch (*(_data32 + 7)) {
-            case 0x9274:
-                // std::cout << "KTX ETC2 RGB" << std::endl;
-                data.channels = 3;
-                data.is_compressed_etc = true;
-                break;
-            case 0x9278:
-                // std::cout << "KTX ETC2 RGBA" << std::endl;
-                data.channels = 4;
-                data.is_compressed_etc = true;
-                break;
-            default:
-                LUCARIA_RUNTIME_ERROR("Invalid ETC2 image data")
-                break;
-            }
-
-            const std::uint8_t* _bytes = reinterpret_cast<const std::uint8_t*>(_content.data());
-            const std::uint32_t _header_size = sizeof(std::uint32_t) * 16;
-            const std::uint32_t _bytes_of_key_value = *(_data32 + 15);
-            std::size_t _offset = _header_size + _bytes_of_key_value;
-            const std::uint32_t _image_size = *reinterpret_cast<const std::uint32_t*>(_bytes + _offset);
-            _offset += sizeof(std::uint32_t);
-            const glm::uint8* _data_ptr = _bytes + _offset;
-            const std::size_t _data_size = _image_size;
-            data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
-            data.width = *(_data32 + 9);
-            data.height = *(_data32 + 10);
-
-            // binary raw format
-        } else {
-            _detail::bytes_stream _stream(data_bytes);
-#if LUCARIA_JSON
-            cereal::JSONInputArchive _archive(_stream);
-#else
-            cereal::PortableBinaryInputArchive _archive(_stream);
-#endif
-            _archive(data);
-        }
-    }
-
-}
 
 const std::filesystem::path& _resolve_image_path(
     const std::filesystem::path& data_path,
@@ -129,10 +43,110 @@ std::vector<std::filesystem::path> _resolve_image_paths(
 }
 
 namespace detail {
+    namespace {
 
-    image_implementation::image_implementation(const std::vector<char>& data_bytes)
+        static void _load_image_bytes(image_data& data, const std::vector<char>& bytes)
+        {
+            const std::vector<uint8_t>& _content = *(reinterpret_cast<const std::vector<uint8_t>*>(&bytes));
+            const uint32_t* _data32 = (uint32_t*)_content.data();
+            data.is_compressed_etc = false;
+            data.is_compressed_s3tc = false;
+
+            // S3TC compression
+            if (*_data32 == 0x03525650) {
+                switch (*(_data32 + 2)) {
+                case 7:
+                    // std::cout << "PVR DXT1 RGB" << std::endl;
+                    data.channels = 3;
+                    data.is_compressed_s3tc = true;
+                    break;
+                case 11:
+                    // std::cout << "PVR DXT5 RGBA" << std::endl;
+                    data.channels = 4;
+                    data.is_compressed_s3tc = true;
+                    break;
+                case 22:
+                    // std::cout << "PVR ETC2 RGB" << std::endl;
+                    data.channels = 3;
+                    data.is_compressed_etc = true;
+                    break;
+                case 23:
+                    // std::cout << "PVR ETC2 RGBA" << std::endl;
+                    data.channels = 4;
+                    data.is_compressed_etc = true;
+                    break;
+                default:
+                    LUCARIA_RUNTIME_ERROR("Invalid S3TC image data")
+                    break;
+                }
+                const std::size_t _offset = 52 + *(_data32 + 12);
+                const glm::uint8* _data_ptr = _content.data() + _offset;
+                const std::size_t _data_size = _content.size() - _offset;
+                data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+                data.height = *(_data32 + 6);
+                data.width = *(_data32 + 7);
+
+                // ETC2 compression
+            } else if (*_data32 == 0x58544BAB) {
+                switch (*(_data32 + 7)) {
+                case 0x9274:
+                    // std::cout << "KTX ETC2 RGB" << std::endl;
+                    data.channels = 3;
+                    data.is_compressed_etc = true;
+                    break;
+                case 0x9278:
+                    // std::cout << "KTX ETC2 RGBA" << std::endl;
+                    data.channels = 4;
+                    data.is_compressed_etc = true;
+                    break;
+                default:
+                    LUCARIA_RUNTIME_ERROR("Invalid ETC2 image data")
+                    break;
+                }
+
+                const std::uint8_t* _bytes = reinterpret_cast<const std::uint8_t*>(_content.data());
+                const std::uint32_t _header_size = sizeof(std::uint32_t) * 16;
+                const std::uint32_t _bytes_of_key_value = *(_data32 + 15);
+                std::size_t _offset = _header_size + _bytes_of_key_value;
+                const std::uint32_t _image_size = *reinterpret_cast<const std::uint32_t*>(_bytes + _offset);
+                _offset += sizeof(std::uint32_t);
+                const glm::uint8* _data_ptr = _bytes + _offset;
+                const std::size_t _data_size = _image_size;
+                data.pixels = std::vector<glm::uint8>(_data_ptr, _data_ptr + _data_size);
+                data.width = *(_data32 + 9);
+                data.height = *(_data32 + 10);
+
+                // binary raw format
+            } else {
+                _detail::bytes_stream _stream(bytes);
+#if LUCARIA_JSON
+                cereal::JSONInputArchive _archive(_stream);
+#else
+                cereal::PortableBinaryInputArchive _archive(_stream);
+#endif
+                _archive(data);
+            }
+        }
+
+        static async_container<image_implementation> _fetch_image_async(
+            const std::filesystem::path& data_path,
+            const std::optional<std::filesystem::path>& etc2_path,
+            const std::optional<std::filesystem::path>& s3tc_path)
+        {
+            const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
+            std::shared_ptr<std::promise<image_implementation>> _promise = std::make_shared<std::promise<image_implementation>>();
+            _fetch_bytes(_image_path, [_promise](const std::vector<char>& _bytes) {
+        image_implementation _image(_bytes);
+        _promise->set_value(std::move(_image)); }, true);
+
+            return async_container<image_implementation>(_promise->get_future());
+        }
+
+    }
+
+    image_implementation::image_implementation(const std::vector<char>& bytes)
     {
-        load_data_from_bytes(data, data_bytes);
+        _load_image_bytes(data, bytes);
     }
 
     image_implementation::image_implementation(image_data&& data)
@@ -140,19 +154,33 @@ namespace detail {
     {
     }
 
-    async_container<image_implementation> fetch_image_async(
-        const std::filesystem::path& data_path,
-        const std::optional<std::filesystem::path>& etc2_path,
-        const std::optional<std::filesystem::path>& s3tc_path)
-    {
-        const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
-        std::shared_ptr<std::promise<image_implementation>> _promise = std::make_shared<std::promise<image_implementation>>();
-        _fetch_bytes(_image_path, [_promise](const std::vector<char>& _data_bytes) {
-        image_implementation _image(_data_bytes);
-        _promise->set_value(std::move(_image)); }, true);
-
-        return async_container<image_implementation>(_promise->get_future());
-    }
-
 }
+
+image_object image_object::fetch(
+    const std::filesystem::path& path,
+    const std::optional<std::filesystem::path>& etc2_path,
+    const std::optional<std::filesystem::path>& s3tc_path)
+{
+    detail::resource_container<detail::image_implementation>* _resource = detail::engine_assets().images.get_or_create_by_path(path, [&] {
+        return detail::_fetch_image_async(path, etc2_path, s3tc_path);
+    });
+
+    return image_object { _resource };
+}
+
+bool image_object::has_value() const
+{
+    return _resource && _resource->is_ready();
+}
+
+image_object::operator bool() const
+{
+    return has_value();
+}
+
+image_object::image_object(detail::resource_container<detail::image_implementation>* resource)
+    : _resource(resource)
+{
+}
+
 }

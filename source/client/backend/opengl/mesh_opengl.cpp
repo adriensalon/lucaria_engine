@@ -135,33 +135,33 @@ namespace detail {
 
     mesh_implementation::mesh_implementation(mesh_implementation&& other)
     {
-        _opengl_impl.is_owning = false;
+        implementation_opengl.is_owning = false;
         *this = std::move(other);
     }
 
     mesh_implementation& mesh_implementation::operator=(mesh_implementation&& other)
     {
-        if (_opengl_impl.is_owning) {
+        if (implementation_opengl.is_owning) {
             LUCARIA_RUNTIME_ERROR("Object already owning resources")
         }
 
-        _opengl_impl.is_owning = true;
-        _opengl_impl.size = other._opengl_impl.size;
-        _opengl_impl.array_id = other._opengl_impl.array_id;
-        _opengl_impl.elements_id = other._opengl_impl.elements_id;
-        _opengl_impl.attribute_ids = std::move(other._opengl_impl.attribute_ids);
-        _opengl_impl.invposes = std::move(other._opengl_impl.invposes);
+        implementation_opengl.is_owning = true;
+        implementation_opengl.size = other.implementation_opengl.size;
+        implementation_opengl.array_id = other.implementation_opengl.array_id;
+        implementation_opengl.elements_id = other.implementation_opengl.elements_id;
+        implementation_opengl.attribute_ids = std::move(other.implementation_opengl.attribute_ids);
+        implementation_opengl.invposes = std::move(other.implementation_opengl.invposes);
 
-        other._opengl_impl.is_owning = false;
+        other.implementation_opengl.is_owning = false;
         return *this;
     }
 
     mesh_implementation::~mesh_implementation()
     {
-        if (_opengl_impl.is_owning) {
-            glDeleteVertexArrays(1, &_opengl_impl.array_id);
-            glDeleteBuffers(1, &_opengl_impl.elements_id);
-            for (const std::pair<const mesh_attribute, glm::uint>& _pair : _opengl_impl.attribute_ids) {
+        if (implementation_opengl.is_owning) {
+            glDeleteVertexArrays(1, &implementation_opengl.array_id);
+            glDeleteBuffers(1, &implementation_opengl.elements_id);
+            for (const std::pair<const mesh_attribute, glm::uint>& _pair : implementation_opengl.attribute_ids) {
                 glDeleteBuffers(1, &_pair.second);
             }
         }
@@ -169,60 +169,60 @@ namespace detail {
 
     mesh_implementation::mesh_implementation(const geometry_implementation& from)
     {
-        _opengl_impl.size = 3 * static_cast<glm::uint>(from.data.indices.size());
-        _opengl_impl.array_id = create_vertex_array();
-        _opengl_impl.elements_id = create_elements_buffer(from.data.indices);
-        _opengl_impl.invposes = from.data.invposes;
+        implementation_opengl.size = 3 * static_cast<glm::uint>(from.data.indices.size());
+        implementation_opengl.array_id = create_vertex_array();
+        implementation_opengl.elements_id = create_elements_buffer(from.data.indices);
+        implementation_opengl.invposes = from.data.invposes;
         if (!from.data.positions.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::position] = create_attribute_buffer(from.data.positions);
+            implementation_opengl.attribute_ids[mesh_attribute::position] = create_attribute_buffer(from.data.positions);
         }
         if (!from.data.colors.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::color] = create_attribute_buffer(from.data.colors);
+            implementation_opengl.attribute_ids[mesh_attribute::color] = create_attribute_buffer(from.data.colors);
         }
         if (!from.data.normals.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::normal] = create_attribute_buffer(from.data.normals);
+            implementation_opengl.attribute_ids[mesh_attribute::normal] = create_attribute_buffer(from.data.normals);
         }
         if (!from.data.tangents.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::tangent] = create_attribute_buffer(from.data.tangents);
+            implementation_opengl.attribute_ids[mesh_attribute::tangent] = create_attribute_buffer(from.data.tangents);
         }
         if (!from.data.bitangents.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::bitangent] = create_attribute_buffer(from.data.bitangents);
+            implementation_opengl.attribute_ids[mesh_attribute::bitangent] = create_attribute_buffer(from.data.bitangents);
         }
         if (!from.data.texcoords.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::texcoord] = create_attribute_buffer(from.data.texcoords);
+            implementation_opengl.attribute_ids[mesh_attribute::texcoord] = create_attribute_buffer(from.data.texcoords);
         }
         if (!from.data.bones.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::bones] = create_attribute_buffer(from.data.bones);
+            implementation_opengl.attribute_ids[mesh_attribute::bones] = create_attribute_buffer(from.data.bones);
         }
         if (!from.data.weights.empty()) {
-            _opengl_impl.attribute_ids[mesh_attribute::weights] = create_attribute_buffer(from.data.weights);
+            implementation_opengl.attribute_ids[mesh_attribute::weights] = create_attribute_buffer(from.data.weights);
         }
-        _opengl_impl.is_owning = true;
+        implementation_opengl.is_owning = true;
     }
 
     glm::uint mesh_implementation::get_size() const
     {
-        return _opengl_impl.size;
+        return implementation_opengl.size;
     }
 
     glm::uint mesh_implementation::get_array_handle() const
     {
-        return _opengl_impl.array_id;
+        return implementation_opengl.array_id;
     }
 
     glm::uint mesh_implementation::get_elements_handle() const
     {
-        return _opengl_impl.elements_id;
+        return implementation_opengl.elements_id;
     }
 
     const std::unordered_map<mesh_attribute, glm::uint>& mesh_implementation::get_attribute_handles() const
     {
-        return _opengl_impl.attribute_ids;
+        return implementation_opengl.attribute_ids;
     }
 
     const std::vector<glm::mat4>& mesh_implementation::get_invposes() const
     {
-        return _opengl_impl.invposes;
+        return implementation_opengl.invposes;
     }
 }
 

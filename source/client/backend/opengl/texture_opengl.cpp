@@ -38,37 +38,37 @@ namespace detail {
 
     texture_implementation::texture_implementation(texture_implementation&& other)
     {
-        _opengl_impl.is_owning = false;
+        implementation_opengl.is_owning = false;
         *this = std::move(other);
     }
 
     texture_implementation& texture_implementation::operator=(texture_implementation&& other)
     {
-        if (_opengl_impl.is_owning) {
+        if (implementation_opengl.is_owning) {
             LUCARIA_RUNTIME_ERROR("Object already owning resources")
         }
 
-        _opengl_impl.is_owning = other._opengl_impl.is_owning;
-        _opengl_impl.size = other._opengl_impl.size;
-        _opengl_impl.id = other._opengl_impl.id;
+        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
+        implementation_opengl.size = other.implementation_opengl.size;
+        implementation_opengl.id = other.implementation_opengl.id;
 
-        other._opengl_impl.is_owning = false;
+        other.implementation_opengl.is_owning = false;
         return *this;
     }
 
     texture_implementation::~texture_implementation()
     {
-        if (_opengl_impl.is_owning) {
+        if (implementation_opengl.is_owning) {
             glBindTexture(GL_TEXTURE_2D, 0);
-            glDeleteTextures(1, &_opengl_impl.id);
+            glDeleteTextures(1, &implementation_opengl.id);
         }
     }
 
     texture_implementation::texture_implementation(const image_implementation& from)
     {
-        _opengl_impl.size = { from.data.width, from.data.height };
-        glGenTextures(1, &_opengl_impl.id);
-        glBindTexture(GL_TEXTURE_2D, _opengl_impl.id);
+        implementation_opengl.size = { from.data.width, from.data.height };
+        glGenTextures(1, &implementation_opengl.id);
+        glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -101,17 +101,17 @@ namespace detail {
             break;
         }
 #if LUCARIA_CONFIG_DEBUG
-        std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << _opengl_impl.id << std::endl;
+        std::cout << "Created TEXTURE_2D buffer of size " << from.data.width << "x" << from.data.height << " with id " << implementation_opengl.id << std::endl;
 #endif
 
-        _opengl_impl.is_owning = true;
+        implementation_opengl.is_owning = true;
     }
 
     texture_implementation::texture_implementation(const glm::uvec2 size)
     {
-        _opengl_impl.size = size;
-        glGenTextures(1, &_opengl_impl.id);
-        glBindTexture(GL_TEXTURE_2D, _opengl_impl.id);
+        implementation_opengl.size = size;
+        glGenTextures(1, &implementation_opengl.id);
+        glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -119,29 +119,29 @@ namespace detail {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
 
 #if LUCARIA_CONFIG_DEBUG
-        std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << _opengl_impl.id << std::endl;
+        std::cout << "Created EMPTY TEXTURE_2D buffer of size " << size.x << "x" << size.y << " with id " << implementation_opengl.id << std::endl;
 #endif
 
-        _opengl_impl.is_owning = true;
+        implementation_opengl.is_owning = true;
     }
 
     void texture_implementation::resize(const glm::uvec2 size)
     {
-        if (_opengl_impl.size != size) {
-            _opengl_impl.size = size;
-            glBindTexture(GL_TEXTURE_2D, _opengl_impl.id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _opengl_impl.size.x, _opengl_impl.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        if (implementation_opengl.size != size) {
+            implementation_opengl.size = size;
+            glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, implementation_opengl.size.x, implementation_opengl.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
         }
     }
 
     glm::uvec2 texture_implementation::get_size() const
     {
-        return _opengl_impl.size;
+        return implementation_opengl.size;
     }
 
     glm::uint texture_implementation::get_handle() const
     {
-        return _opengl_impl.id;
+        return implementation_opengl.id;
     }
 }
 }
