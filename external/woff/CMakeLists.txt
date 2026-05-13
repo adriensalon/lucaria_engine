@@ -6,9 +6,15 @@ set(woff2_common_sources
     "upstream/woff/src/variable_length.cc"
     "upstream/woff/src/woff2_common.cc")
 
-set(woff2_decompress_sources
-    "upstream/woff/src/woff2_dec.cc"
-    "upstream/woff/src/woff2_out.cc")
+if(PSP)
+	set(woff2_decompress_sources
+		"psp/woff2_dec.cc"
+		"upstream/woff/src/woff2_out.cc")
+else()
+	set(woff2_decompress_sources
+		"upstream/woff/src/woff2_dec.cc"
+		"upstream/woff/src/woff2_out.cc")
+endif()
 
 set(woff2_sources
     ${brotli_common_sources}
@@ -19,6 +25,9 @@ set(woff2_sources
 add_library(lucaria_external_woff STATIC ${woff2_sources})
 target_include_directories(lucaria_external_woff PUBLIC "upstream/woff/brotli/c/include")
 target_include_directories(lucaria_external_woff PUBLIC "upstream/woff/include")
+if(PSP)
+	target_include_directories(lucaria_external_woff PRIVATE "upstream/woff/src")
+endif()
 
 if (MSVC)
     target_compile_options(lucaria_external_woff PRIVATE /wd4018)

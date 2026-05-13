@@ -47,7 +47,7 @@ function(add_lucaria_game_android TARGET)
     endif()
     set(ANDROID_TOOLCHAIN "${ANDROID_NDK}/build/cmake/android.toolchain.cmake" CACHE PATH "Android NDK toolchain file")
     message(STATUS "Found Android NDK at ${ANDROID_NDK}")
-    message(STATUS "Found Android toolchain file at ${ANDROID_TOOLCHAIN}")
+    # message(STATUS "Found Android toolchain file at ${ANDROID_TOOLCHAIN}")
 
     # select gradlew
     if(WIN32)

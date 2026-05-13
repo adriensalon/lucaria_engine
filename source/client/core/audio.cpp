@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <vorbis/vorbisfile.h>
 
 #include <lucaria/core/audio.hpp>

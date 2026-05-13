@@ -1,9 +1,12 @@
 #pragma once
 
 #include <lucaria/core/geometry.hpp>
+#include <lucaria/core/math.hpp>
 #include <lucaria/core/resource.hpp>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/mesh_opengl.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {
@@ -29,7 +32,9 @@ namespace detail {
 
         mesh_implementation(const geometry_implementation& geometry);
 
-		mesh_implementation_opengl implementation_opengl;
+#if LUCARIA_BACKEND_OPENGL
+        mesh_implementation_opengl implementation_opengl;
+#endif
 
         std::vector<float32x4x4> invposes;
         uint32 size;
@@ -38,11 +43,11 @@ namespace detail {
 }
 
 struct mesh_object {
-	mesh_object() = default;
-	mesh_object(const mesh_object& other) = default;
-	mesh_object& operator=(const mesh_object& other) = default;
-	mesh_object(mesh_object&& other) = default;
-	mesh_object& operator=(mesh_object&& other) = default;
+    mesh_object() = default;
+    mesh_object(const mesh_object& other) = default;
+    mesh_object& operator=(const mesh_object& other) = default;
+    mesh_object(mesh_object&& other) = default;
+    mesh_object& operator=(mesh_object&& other) = default;
 
     /// TODO GO CONTEXT
     static mesh_object create(const geometry_object geometry);
@@ -53,9 +58,9 @@ struct mesh_object {
     /// @brief Checks if the mesh is ready to be used
     /// @return true if the mesh is ready, false otherwise
     [[nodiscard]] bool has_value() const;
-	
-	/// @brief Conversion operator for the has_value member function
-	[[nodiscard]] explicit operator bool() const;
+
+    /// @brief Conversion operator for the has_value member function
+    [[nodiscard]] explicit operator bool() const;
 
 private:
     detail::resource_container<detail::mesh_implementation>* _resource = nullptr;

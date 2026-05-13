@@ -16,7 +16,7 @@ extern void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, c
 namespace detail {
     namespace {
 
-        async_container<cubemap_implementation> _fetch_cubemap_async(
+        static async_container<cubemap_implementation> _fetch_cubemap_async(
             const std::array<std::filesystem::path, 6>& data_paths,
             const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
             const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)

@@ -675,7 +675,7 @@ namespace {
         _last_render_time = _render_time;
 #else
         static std::chrono::high_resolution_clock::time_point _last_render_time = std::chrono::high_resolution_clock::now();
-        const std::chrono::steady_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
+        const std::chrono::high_resolution_clock::time_point _render_time = std::chrono::high_resolution_clock::now();
         time_delta_seconds = std::chrono::duration<glm::float64>(_render_time - _last_render_time).count();
         _last_render_time = _render_time;
 #endif

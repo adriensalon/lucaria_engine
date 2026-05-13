@@ -9,6 +9,16 @@ else()
     add_executable(${LUCARIA_TARGET} ${LUCARIA_TARGET_SOURCES})
 endif()
 
+if(PSP)
+	create_pbp_file(
+		TARGET ${LUCARIA_TARGET}
+		ICON_PATH NULL
+		BACKGROUND_PATH NULL
+		PREVIEW_PATH NULL
+		TITLE ${LUCARIA_TARGET}
+		VERSION 01.00)
+endif()
+
 set_target_properties(${LUCARIA_TARGET} PROPERTIES CXX_STANDARD 17)
 target_link_libraries(${LUCARIA_TARGET} PRIVATE lucaria_client)
 target_include_directories(${LUCARIA_TARGET} PRIVATE ${LUCARIA_TARGET_INCLUDES})

@@ -1,11 +1,9 @@
 file(GLOB_RECURSE ozz_base_sources "upstream/ozz/src/base/*.cc")
 file(GLOB_RECURSE ozz_animation_sources "upstream/ozz/src/animation/runtime/*.cc")
-file(GLOB_RECURSE ozz_geometry_sources "upstream/ozz/src/animation/runtime*.cc")
 
 set(ozz_runtime_sources
     ${ozz_base_sources}
-    ${ozz_animation_sources}
-    ${ozz_geometry_sources})
+    ${ozz_animation_sources})
 
 set(lucaria_external_ozz_sources
     ${ozz_runtime_sources})
@@ -26,6 +24,10 @@ elseif(WIN32)
     else()
         target_compile_options(lucaria_external_ozz PUBLIC -msse4.1)
     endif()
+elseif(PSP)
+    target_compile_definitions(lucaria_external_ozz PUBLIC OZZ_BUILD_SIMD_REF)
+	target_compile_options(lucaria_external_ozz PRIVATE -include "${CMAKE_CURRENT_SOURCE_DIR}/psp/fix_archive.h")
+	target_include_directories(lucaria_external_ozz BEFORE PUBLIC "psp")
 endif()
 
 if(MSVC)

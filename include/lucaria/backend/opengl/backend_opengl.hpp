@@ -1,7 +1,5 @@
 #pragma once
 
-#include <lucaria/core/platform.hpp>
-
 #if LUCARIA_PLATFORM_ANDROID
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>

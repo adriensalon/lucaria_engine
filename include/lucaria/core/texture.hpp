@@ -5,7 +5,9 @@
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/resource.hpp>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/texture_opengl.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {
@@ -23,7 +25,9 @@ namespace detail {
         void resize(const uint32x2 new_size);
         [[nodiscard]] ImTextureID imgui_texture() const;
 
+#if LUCARIA_BACKEND_OPENGL
         texture_implementation_opengl implementation_opengl;
+#endif
 
         uint32x2 size;
     };

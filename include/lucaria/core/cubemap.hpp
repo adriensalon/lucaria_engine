@@ -3,7 +3,9 @@
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/resource.hpp>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/cubemap_opengl.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {
@@ -18,7 +20,9 @@ namespace detail {
 
         cubemap_implementation(const std::array<image_implementation, 6>& images);
 
+#if LUCARIA_BACKEND_OPENGL
         cubemap_implementation_opengl implementation_opengl;
+#endif
     };
 
 }

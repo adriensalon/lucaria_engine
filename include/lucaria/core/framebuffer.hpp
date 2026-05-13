@@ -2,7 +2,9 @@
 
 #include <lucaria/core/renderbuffer.hpp>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/framebuffer_opengl.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {

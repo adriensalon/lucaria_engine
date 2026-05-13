@@ -5,7 +5,9 @@
 #include <lucaria/core/shader.hpp>
 #include <lucaria/core/texture.hpp>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/program_opengl.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {
@@ -32,7 +34,9 @@ struct program_implementation {
     void draw_guizmo() const;    
 #endif
 
+#if LUCARIA_BACKEND_OPENGL
 	program_implementation_opengl implementation_opengl;
+#endif
 };
 
 }

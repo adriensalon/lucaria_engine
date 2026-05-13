@@ -2,7 +2,9 @@
 
 #include <lucaria/core/texture.hpp>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/renderbuffer_opengl.hpp>
+#endif
 
 namespace lucaria {
 namespace detail {
@@ -18,7 +20,9 @@ namespace detail {
         renderbuffer_implementation(const uint32x2 size, const glm::uint internal_format, const glm::uint samples = 1);
         void resize(const uint32x2 new_size);
 
+#if LUCARIA_BACKEND_OPENGL
         renderbuffer_implementation_opengl implementation_opengl;
+#endif
 
         uint32 sampling_count;
         uint32x2 size;

@@ -4,23 +4,31 @@ set(imgui_sources
 	"upstream/imgui/imgui_tables.cpp"
 	"upstream/imgui/imgui_draw.cpp"
 	"upstream/imgui/imgui_demo.cpp"
-	"upstream/imgui/misc/cpp/imgui_stdlib.cpp"	
-	"upstream/imgui/backends/imgui_impl_opengl3.cpp")
+	"upstream/imgui/misc/cpp/imgui_stdlib.cpp")
 
 if(ANDROID)
-	set(imgui_sources
-		${imgui_sources}
-		"upstream/imgui/backends/imgui_impl_android.cpp")
+    list(APPEND imgui_sources
+		"upstream/imgui/backends/imgui_impl_android.cpp"
+		"upstream/imgui/backends/imgui_impl_opengl3.cpp")		
+elseif(EMSCRIPTEN)
+    list(APPEND imgui_sources
+		"upstream/imgui/backends/imgui_impl_opengl3.cpp")
 elseif(WIN32)
-	set(imgui_sources
-		${imgui_sources}
-		"upstream/imgui/backends/imgui_impl_glfw.cpp")
+    list(APPEND imgui_sources
+		"upstream/imgui/backends/imgui_impl_glfw.cpp"
+		"upstream/imgui/backends/imgui_impl_opengl3.cpp")
+elseif(PSP)
+    list(APPEND imgui_sources
+		"upstream/imgui_psp/source/imgui_impl_psp.cpp")
 endif()
 
 add_library(lucaria_external_imgui STATIC EXCLUDE_FROM_ALL ${imgui_sources})
 set_target_properties(lucaria_external_imgui PROPERTIES CXX_STANDARD 17)
 target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui")
-target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui/backends")
+
+if(PSP)
+	target_include_directories(lucaria_external_imgui PUBLIC "upstream/imgui_psp/include")
+endif()
 
 if(ANDROID)
 	target_link_libraries(lucaria_external_imgui PUBLIC GLESv3)

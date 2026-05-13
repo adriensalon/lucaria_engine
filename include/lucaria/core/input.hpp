@@ -9,6 +9,11 @@
 #include <vector>
 
 namespace lucaria {
+namespace detail {
+
+	
+
+}
 
 /// @brief Buttons tracked by the implementation.
 /// If a keyboard is detected this is how the engine will index key events.

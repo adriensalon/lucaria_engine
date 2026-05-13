@@ -35,9 +35,13 @@ function(lucaria_build_game
         list(APPEND game_toolchain "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${TOOLCHAIN}")
     endif()
 
+	if(NOT LUCARIA_GAME_CMAKE_COMMAND)
+        set(LUCARIA_GAME_CMAKE_COMMAND "${CMAKE_COMMAND}")
+    endif()
+
     add_custom_target(${TARGET}_${PLATFORM}
         ALL
-        COMMAND "${CMAKE_COMMAND}" -Wno-dev -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward} ${ARGS} -DLUCARIA_CONFIG=$<CONFIG> -DLUCARIA_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>
+        COMMAND "${LUCARIA_GAME_CMAKE_COMMAND}" -Wno-dev -S "${game_source_dir}" -B "${game_output_dir}" -G "${GENERATOR}" ${game_toolchain} ${game_forward} ${ARGS} -DLUCARIA_CONFIG=$<CONFIG> -DLUCARIA_DEBUG=$<IF:$<CONFIG:Debug>,ON,OFF>
         COMMAND "${CMAKE_COMMAND}" --build "${game_output_dir}" --config $<CONFIG> 
         WORKING_DIRECTORY "${game_output_dir}"
         COMMENT "Building ${TARGET} for ${PLATFORM}..."
