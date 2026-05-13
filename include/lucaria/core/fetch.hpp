@@ -173,54 +173,5 @@ namespace _detail {
         std::size_t _position;
     };
 
-    template <typename FetchedType>
-    struct OLDfetched_container {
-
-        void emplace(FetchedType& obj)
-        {
-            _ptr = &obj;
-        }
-
-        void emplace(detail::async_container<FetchedType>& fut, const std::function<void()>& callback = nullptr)
-        {
-            _fut = &fut;
-            _callback = callback;
-        }
-
-        [[nodiscard]] bool has_value() const
-        {
-            if (_ptr) {
-                return true;
-            }
-            if (_fut && _fut->has_value()) {
-                if (_callback && !_is_callback_invoked) {
-                    _is_callback_invoked = true;
-                    _callback();
-                    _callback = nullptr;
-                }
-                return true;
-            }
-            return false;
-        }
-
-        [[nodiscard]] FetchedType& value()
-        {
-            return _ptr ? *_ptr : _fut->value();
-        }
-
-        [[nodiscard]] const FetchedType& value() const
-        {
-            return _ptr ? *_ptr : _fut->value();
-        }
-
-        [[nodiscard]] explicit operator bool() const { return has_value(); }
-
-    private:
-        FetchedType* _ptr = nullptr;
-        detail::async_container<FetchedType>* _fut = nullptr;
-        mutable std::function<void()> _callback = nullptr;
-        mutable bool _is_callback_invoked = false;
-    };
-
 }
 }

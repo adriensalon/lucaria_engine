@@ -116,14 +116,14 @@ namespace {
     static glm::mat4x4 camera_projection;
     static glm::mat4x4 camera_view;
     static glm::mat4x4 camera_view_projection;
-    static _detail::OLDfetched_container<cubemap> skybox_cubemap = {};
+    static cubemap_object skybox_cubemap = {};
     static glm::float32 _skybox_rotation = 0.f;
     static bool show_free_camera = false;
 
     // post processing
     static std::optional<detail::framebuffer_implementation> scene_framebuffer;
     static std::optional<detail::texture_implementation> scene_color_texture = std::nullopt;
-    static std::optional<renderbuffer> scene_depth_renderbuffer;
+    static std::optional<detail::renderbuffer_implementation> scene_depth_renderbuffer;
 
     // fxaa
     static bool fxaa_enable = false;
@@ -469,14 +469,9 @@ void _draw_guizmo_line(const btVector3& from, const btVector3& to, const btVecto
 }
 #endif
 
-void use_skybox_cubemap(cubemap& from)
+void use_skybox_cubemap(const cubemap_object cubemap)
 {
-    skybox_cubemap.emplace(from);
-}
-
-void use_skybox_cubemap(detail::async_container<cubemap>& from)
-{
-    skybox_cubemap.emplace(from);
+    skybox_cubemap = cubemap;
 }
 
 void set_skybox_rotation(const glm::float32 rotation)
@@ -567,7 +562,7 @@ struct rendering_system {
             scene_color_texture.value().resize(_screen_size);
         }
         if (!scene_depth_renderbuffer) {
-            scene_depth_renderbuffer = renderbuffer(_screen_size, GL_DEPTH_COMPONENT24);
+            scene_depth_renderbuffer = detail::renderbuffer_implementation(_screen_size, GL_DEPTH_COMPONENT24);
             scene_framebuffer->bind_depth(scene_depth_renderbuffer.value());
         } else {
             scene_depth_renderbuffer->resize(_screen_size);
@@ -670,10 +665,10 @@ struct rendering_system {
 
     static void draw_skybox()
     {
-        if (skybox_cubemap.has_value()) {
+        if (skybox_cubemap) {
             static bool _is_skybox_setup = false;
-            static std::optional<detail::mesh_implementation> _persistent_skybox_mesh = {};
-            static std::optional<program> _persistent_skybox_program = std::nullopt;
+            static std::optional<detail::mesh_implementation> _persistent_skybox_mesh = std::nullopt;
+            static std::optional<detail::program_implementation> _persistent_skybox_program = std::nullopt;
 
             if (!_is_skybox_setup) {
                 geometry_data _geometry_data;
@@ -690,8 +685,8 @@ struct rendering_system {
             }
 
             detail::mesh_implementation& _skybox_mesh = _persistent_skybox_mesh.value();
-            program& _skybox_program = _persistent_skybox_program.value();
-            cubemap& _skybox_cubemap = skybox_cubemap.value();
+           	detail::program_implementation& _skybox_program = _persistent_skybox_program.value();
+            detail::cubemap_implementation& _skybox_cubemap = skybox_cubemap._resource->get();
             const glm::mat4 _skybox_rotation_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(_skybox_rotation), glm::vec3(0, 1, 0));
             const glm::mat4 _no_translation_view_projection = camera_projection * glm::mat4(glm::mat3(camera_view)) * _skybox_rotation_matrix;
             _skybox_program.use();
@@ -705,15 +700,15 @@ struct rendering_system {
     static void draw_blockout_meshes()
     {
         static bool _is_program_setup = false;
-        static std::optional<program> _persistent_blockout_program = std::nullopt;
+        static std::optional<detail::program_implementation> _persistent_blockout_program = std::nullopt;
         if (!_is_program_setup) {
             shader _blockout_vertex_shader(shader_data { blockout_vertex });
             shader _blockout_fragment_shader(shader_data { blockout_fragment });
-            _persistent_blockout_program = program(_blockout_vertex_shader, _blockout_fragment_shader);
+            _persistent_blockout_program = detail::program_implementation(_blockout_vertex_shader, _blockout_fragment_shader);
             _is_program_setup = true;
         }
 
-        program& _blockout_program = _persistent_blockout_program.value();
+        detail::program_implementation& _blockout_program = _persistent_blockout_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<blockout_model_component, transform_component>().each([&](blockout_model_component& _model, transform_component& _transform) {
                 if (_model._mesh) {
@@ -740,7 +735,7 @@ struct rendering_system {
         });
     }
 
-    inline static std::optional<program> _persistent_unlit_program = std::nullopt;
+    inline static std::optional<detail::program_implementation> _persistent_unlit_program = std::nullopt;
 
     static void draw_unlit_meshes()
     {
@@ -748,11 +743,11 @@ struct rendering_system {
         if (!_is_program_setup) {
             shader _unlit_vertex_shader(shader_data { unlit_vertex });
             shader _unlit_fragment_shader(shader_data { unlit_fragment });
-            _persistent_unlit_program = program(_unlit_vertex_shader, _unlit_fragment_shader);
+            _persistent_unlit_program = detail::program_implementation(_unlit_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
 
-        program& _unlit_program = _persistent_unlit_program.value();
+        detail::program_implementation& _unlit_program = _persistent_unlit_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<unlit_model_component, transform_component>(entt::exclude<animator_component>).each([&](unlit_model_component& _model, transform_component& _transform) {
                 if (_model._mesh && _model._color) {
@@ -786,15 +781,15 @@ struct rendering_system {
     static void draw_unlit_skinned_meshes()
     {
         static bool _is_program_setup = false;
-        static std::optional<program> _persistent_unlit_skinned_program = std::nullopt;
+        static std::optional<detail::program_implementation> _persistent_unlit_skinned_program = std::nullopt;
         if (!_is_program_setup) {
             shader _unlit_fragment_shader(shader_data { unlit_fragment });
             shader _unlit_skinned_vertex_shader(shader_data { unlit_skinned_vertex });
-            _persistent_unlit_skinned_program = program(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
+            _persistent_unlit_skinned_program = detail::program_implementation(_unlit_skinned_vertex_shader, _unlit_fragment_shader);
             _is_program_setup = true;
         }
 
-        program& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
+        detail::program_implementation& _unlit_skinned_program = _persistent_unlit_skinned_program.value();
         each_scene([&](entt::registry& scene) {
             scene.view<unlit_model_component, transform_component, animator_component>().each([&](unlit_model_component& _model, transform_component& _transform, animator_component& animator) {
                 if (_model._mesh && _model._color && animator._skeleton.has_value()) {
@@ -807,7 +802,7 @@ struct rendering_system {
                     _unlit_skinned_program.bind_attribute("vert_bones", _mesh, detail::mesh_attribute::bones);
                     _unlit_skinned_program.bind_attribute("vert_weights", _mesh, detail::mesh_attribute::weights);
                     _unlit_skinned_program.bind_uniform("uniform_view", _model_view_projection);
-                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
+                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.invposes);
                     _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
                     _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
@@ -825,7 +820,7 @@ struct rendering_system {
                     _unlit_skinned_program.bind_attribute("vert_weights", _mesh, detail::mesh_attribute::weights);
                     _unlit_skinned_program.bind_uniform("uniform_view", camera_view_projection);
                     _unlit_skinned_program.bind_uniform("uniform_bones_transforms[0]", animator._model_transforms);
-                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.get_invposes());
+                    _unlit_skinned_program.bind_uniform("uniform_bones_invposes[0]", _mesh.invposes);
                     _unlit_skinned_program.bind_uniform("uniform_color", _color, 0);
                     _unlit_skinned_program.draw();
                 }
@@ -870,7 +865,7 @@ struct rendering_system {
                     interface._imgui_callback();
 
                     if (interface._use_interaction && interface._interaction_texture.has_value()) {
-                        const ImTextureID _texture_id = reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(interface._interaction_texture._resource->get().get_handle()));
+                        const ImTextureID _texture_id = interface._interaction_texture.imgui_texture();
                         if (_raycasted_uvs) {
                             const ImVec2 _cursor_min(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
                             const ImVec2 _cursor_max(
@@ -887,7 +882,7 @@ struct rendering_system {
                     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
                     scene_framebuffer->use();
-                    program& _unlit_program = _persistent_unlit_program.value();
+                    detail::program_implementation& _unlit_program = _persistent_unlit_program.value();
                     _unlit_program.use();
                     _unlit_program.bind_attribute("vert_position", interface._viewport_mesh.value(), detail::mesh_attribute::position);
                     _unlit_program.bind_attribute("vert_texcoord", interface._viewport_mesh.value(), detail::mesh_attribute::texcoord);
@@ -926,7 +921,7 @@ struct rendering_system {
     {
         static bool _is_post_processing_setup = false;
         static std::optional<detail::mesh_implementation> _persistent_post_processing_mesh = std::nullopt;
-        static std::optional<program> _persistent_post_processing_program = std::nullopt;
+        static std::optional<detail::program_implementation> _persistent_post_processing_program = std::nullopt;
 
         if (!_is_post_processing_setup) {
             geometry_data _geometry_data;
@@ -948,12 +943,12 @@ struct rendering_system {
             shader _post_processing_fragment_shader(shader_data { post_processing_fragment });
 
             _persistent_post_processing_mesh.emplace(_post_processing_geometry);
-            _persistent_post_processing_program = program(_post_processing_vertex_shader, _post_processing_fragment_shader);
+            _persistent_post_processing_program = detail::program_implementation(_post_processing_vertex_shader, _post_processing_fragment_shader);
             _is_post_processing_setup = true;
         }
 
         detail::mesh_implementation& _post_processing_mesh = _persistent_post_processing_mesh.value();
-        program& _post_processing_program = _persistent_post_processing_program.value();
+        detail::program_implementation& _post_processing_program = _persistent_post_processing_program.value();
 
         detail::framebuffer_implementation::use_default();
 
@@ -996,14 +991,14 @@ struct rendering_system {
                 }
             }
             static bool _is_program_setup = false;
-            static std::optional<program> _persistent_guizmo_program = std::nullopt;
+            static std::optional<detail::program_implementation> _persistent_guizmo_program = std::nullopt;
             if (!_is_program_setup) {
                 shader _guizmo_vertex_shader(shader_data { guizmo_vertex });
                 shader _guizmo_fragment_shader(shader_data { guizmo_fragment });
-                _persistent_guizmo_program = program(_guizmo_vertex_shader, _guizmo_fragment_shader);
+                _persistent_guizmo_program = detail::program_implementation(_guizmo_vertex_shader, _guizmo_fragment_shader);
                 _is_program_setup = true;
             }
-            program& _guizmo_program = _persistent_guizmo_program.value();
+            detail::program_implementation& _guizmo_program = _persistent_guizmo_program.value();
             _guizmo_program.use();
             for (const std::pair<const glm::vec3, _detail::guizmo_mesh>& _pair : guizmo_meshes) {
                 _guizmo_program.bind_guizmo("vert_position", _pair.second);

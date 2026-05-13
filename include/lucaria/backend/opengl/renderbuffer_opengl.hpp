@@ -7,10 +7,11 @@
 namespace lucaria {
 namespace detail {
 
-	struct texture_implementation_opengl {
-		bool is_owning = false;
+    struct renderbuffer_implementation_opengl {
+        bool is_owning = false;
         GLuint id = 0;
-	};
+        GLuint internal_format = 0;
+    };
 
 }
 }

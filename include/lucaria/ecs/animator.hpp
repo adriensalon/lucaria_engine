@@ -7,6 +7,8 @@
 #include <ozz/base/maths/soa_transform.h>
 
 #include <lucaria/core/animation.hpp>
+#include <lucaria/core/event_track.hpp>
+#include <lucaria/core/motion_track.hpp>
 #include <lucaria/core/skeleton.hpp>
 #include <lucaria/ecs/transform.hpp>
 

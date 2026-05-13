@@ -1,16 +1,5 @@
 #include <lucaria/core/texture.hpp>
 
-#if LUCARIA_PLATFORM_ANDROID
-#include <EGL/egl.h>
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WEB
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WIN32
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#endif
-
 namespace lucaria {
 
 extern bool _is_etc2_supported;
@@ -49,8 +38,8 @@ namespace detail {
         }
 
         implementation_opengl.is_owning = other.implementation_opengl.is_owning;
-        implementation_opengl.size = other.implementation_opengl.size;
         implementation_opengl.id = other.implementation_opengl.id;
+		size = other.size;
 
         other.implementation_opengl.is_owning = false;
         return *this;
@@ -66,7 +55,7 @@ namespace detail {
 
     texture_implementation::texture_implementation(const image_implementation& from)
     {
-        implementation_opengl.size = { from.data.width, from.data.height };
+        size = { from.data.width, from.data.height };
         glGenTextures(1, &implementation_opengl.id);
         glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -108,8 +97,8 @@ namespace detail {
     }
 
     texture_implementation::texture_implementation(const glm::uvec2 size)
+        : size(size)
     {
-        implementation_opengl.size = size;
         glGenTextures(1, &implementation_opengl.id);
         glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -125,23 +114,20 @@ namespace detail {
         implementation_opengl.is_owning = true;
     }
 
-    void texture_implementation::resize(const glm::uvec2 size)
+    void texture_implementation::resize(const glm::uvec2 new_size)
     {
-        if (implementation_opengl.size != size) {
-            implementation_opengl.size = size;
+        if (size != new_size) {
+            size = new_size;
             glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, implementation_opengl.size.x, implementation_opengl.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
         }
     }
 
-    glm::uvec2 texture_implementation::get_size() const
+    ImTextureID texture_implementation::imgui_texture() const
     {
-        return implementation_opengl.size;
+        return reinterpret_cast<ImTextureID>(
+            static_cast<std::uintptr_t>(implementation_opengl.id));
     }
 
-    glm::uint texture_implementation::get_handle() const
-    {
-        return implementation_opengl.id;
-    }
 }
 }

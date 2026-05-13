@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include <LinearMath/btQuaternion.h>
 #include <LinearMath/btTransform.h>
 #include <LinearMath/btVector3.h>

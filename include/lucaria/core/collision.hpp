@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cstdint>
-
-#include <glm/glm.hpp>
+#include <lucaria/core/math.hpp>
 
 namespace lucaria {
 
@@ -27,9 +25,9 @@ enum struct collision_layer : std::int16_t {
 
 /// @brief 
 struct collision {
-    glm::float32 distance;
-    glm::vec3 position;
-    glm::vec3 normal;
+    float32 distance;
+    float32x3 position;
+    float32x3 normal;
 };
 
 }

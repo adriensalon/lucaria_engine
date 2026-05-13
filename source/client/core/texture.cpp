@@ -1,6 +1,3 @@
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/portable_binary.hpp>
-
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/texture.hpp>
@@ -33,7 +30,7 @@ namespace detail {
     }
 }
 
-texture_object texture_object::create(const glm::uvec2 size)
+texture_object texture_object::create(const uint32x2 size)
 {
     return texture_object { detail::engine_assets().textures.create_cell(
         detail::async_container<detail::texture_implementation>(
@@ -59,26 +56,29 @@ texture_object::operator bool() const
     return has_value();
 }
 
-void texture_object::resize(const glm::uvec2 size)
+void texture_object::resize(const uint32x2 new_size)
 {
-    if (_resource) {
-        _resource->get().resize(size);
+    if (has_value()) {
+        _resource->get().resize(new_size);
     }
 }
 
-// void texture_object::update_pixels(const image& from, const glm::uvec2 size, const glm::uvec2 offset)
-// {
-//     if (_cell) {
-//         _cell->get().update_pixels(from, size, offset);
-//     }
-// }
-
-glm::uvec2 texture_object::get_size() const
+uint32x2 texture_object::size() const
 {
-    if (_resource) {
-        return _resource->get().get_size();
+    if (has_value()) {
+        return _resource->get().size;
     }
-    return glm::uvec2(0, 0);
+
+    return uint32x2(0, 0);
+}
+
+ImTextureID texture_object::imgui_texture() const 
+{
+	if (has_value()) {
+        return _resource->get().imgui_texture();
+    }
+
+	return static_cast<ImTextureID>(0);
 }
 
 texture_object::texture_object(detail::resource_container<detail::texture_implementation>* resource)

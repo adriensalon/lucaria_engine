@@ -2,151 +2,169 @@
 
 #include <lucaria/core/audio.hpp>
 #include <lucaria/core/error.hpp>
+#include <lucaria/core/database.hpp>
 
 namespace lucaria {
 
-extern void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
 extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
 
-namespace {
+namespace detail {
+    namespace {
 
-    struct vorbis_bytes_stream {
+        struct _vorbis_bytes_stream {
 
-        vorbis_bytes_stream(const std::vector<char>& data)
-            : _bytes(data)
-            , _position(0)
+            _vorbis_bytes_stream(const std::vector<char>& data)
+                : _bytes(data)
+                , _position(0)
+            {
+            }
+
+            std::size_t read(void* ptr, std::size_t size, std::size_t nmemb)
+            {
+                const std::size_t _remaining = _bytes.size() - _position;
+                const std::size_t _to_read = std::min(size * nmemb, _remaining);
+                std::memcpy(ptr, _bytes.data() + _position, _to_read);
+                _position += _to_read;
+                return _to_read / size;
+            }
+
+            int seek(ogg_int64_t offset, int whence)
+            {
+                ogg_int64_t _new_position = 0;
+                switch (whence) {
+                case SEEK_SET:
+                    _new_position = offset;
+                    break;
+                case SEEK_CUR:
+                    _new_position = _position + offset;
+                    break;
+                case SEEK_END:
+                    _new_position = _bytes.size() + offset;
+                    break;
+                default:
+                    return -1;
+                }
+                if (_new_position < 0 || static_cast<std::size_t>(_new_position) > _bytes.size()) {
+                    return -1;
+                }
+                _position = _new_position;
+                return 0;
+            }
+
+            long tell() const
+            {
+                return static_cast<long>(_position);
+            }
+
+        private:
+            const std::vector<char>& _bytes;
+            std::size_t _position;
+        };
+
+        static std::size_t _vorbis_read_callback(void* ptr, std::size_t size, std::size_t nmemb, void* data_source)
         {
+            _vorbis_bytes_stream* _stream = static_cast<_vorbis_bytes_stream*>(data_source);
+            return _stream->read(ptr, size, nmemb);
         }
 
-        std::size_t read(void* ptr, std::size_t size, std::size_t nmemb)
+        static int _vorbis_seek_callback(void* data_source, ogg_int64_t offset, int whence)
         {
-            std::size_t remaining = _bytes.size() - _position;
-            std::size_t to_read = std::min(size * nmemb, remaining);
-            std::memcpy(ptr, _bytes.data() + _position, to_read);
-            _position += to_read;
-            return to_read / size; // Return the number of items read
+            _vorbis_bytes_stream* _stream = static_cast<_vorbis_bytes_stream*>(data_source);
+            return _stream->seek(offset, whence);
         }
 
-        int seek(ogg_int64_t offset, int whence)
+        static long _vorbis_tell_callback(void* data_source)
         {
-            ogg_int64_t new_position = 0;
-            switch (whence) {
-            case SEEK_SET:
-                new_position = offset;
-                break;
-            case SEEK_CUR:
-                new_position = _position + offset;
-                break;
-            case SEEK_END:
-                new_position = _bytes.size() + offset;
-                break;
-            default:
-                return -1;
-            }
-            if (new_position < 0 || static_cast<std::size_t>(new_position) > _bytes.size()) {
-                return -1;
-            }
-            _position = new_position;
+            _vorbis_bytes_stream* _stream = static_cast<_vorbis_bytes_stream*>(data_source);
+            return _stream->tell();
+        }
+
+        static int _vorbis_close_callback(void* data_source)
+        {
             return 0;
         }
 
-        long tell() const
+        static void _load_audio_bytes(audio_data& data, const std::vector<char>& bytes)
         {
-            return static_cast<long>(_position);
-        }
+            _vorbis_bytes_stream _stream(bytes);
+            OggVorbis_File _vorbis;
+            ov_callbacks _callbacks;
+            _callbacks.read_func = _vorbis_read_callback;
+            _callbacks.seek_func = _vorbis_seek_callback;
+            _callbacks.tell_func = _vorbis_tell_callback;
+            _callbacks.close_func = _vorbis_close_callback;
 
-    private:
-        const std::vector<char>& _bytes;
-        std::size_t _position;
-    };
-
-    static std::size_t read_func(void* ptr, std::size_t size, std::size_t nmemb, void* data_source)
-    {
-        vorbis_bytes_stream* stream = static_cast<vorbis_bytes_stream*>(data_source);
-        return stream->read(ptr, size, nmemb);
-    }
-
-    static int seek_func(void* data_source, ogg_int64_t offset, int whence)
-    {
-        vorbis_bytes_stream* stream = static_cast<vorbis_bytes_stream*>(data_source);
-        return stream->seek(offset, whence);
-    }
-
-    static long tell_func(void* data_source)
-    {
-        vorbis_bytes_stream* stream = static_cast<vorbis_bytes_stream*>(data_source);
-        return stream->tell();
-    }
-
-    static int close_func(void* data_source)
-    {
-        // nothing to do here since we don't manage the memory for the data
-        return 0;
-    }
-
-    static void load_data_from_bytes(audio_data& data, const std::vector<char>& data_bytes)
-    {
-        vorbis_bytes_stream _stream(data_bytes);
-        OggVorbis_File _vorbis;
-        ov_callbacks _callbacks;
-        _callbacks.read_func = read_func;
-        _callbacks.seek_func = seek_func;
-        _callbacks.tell_func = tell_func;
-        _callbacks.close_func = close_func;
-
-        if (ov_open_callbacks(&_stream, &_vorbis, nullptr, 0, _callbacks) != 0) {
-            LUCARIA_RUNTIME_ERROR("Failed to open OGG file")
-        }
-
-        vorbis_info* _info = ov_info(&_vorbis, -1);
-        if (_info->channels != 1) {
-            ov_clear(&_vorbis);
-            LUCARIA_RUNTIME_ERROR("Failed to open OGG file, only mono files are supported")
-        }
-
-        data.sample_rate = _info->rate;
-        float** _pcm_channels;
-        int _bitstream;
-        long _samples;
-        while ((_samples = ov_read_float(&_vorbis, &_pcm_channels, 512, &_bitstream)) > 0) {
-            for (long i = 0; i < _samples; ++i) {
-                data.samples.push_back(_pcm_channels[0][i]);
+            if (ov_open_callbacks(&_stream, &_vorbis, nullptr, 0, _callbacks) != 0) {
+                LUCARIA_RUNTIME_ERROR("Failed to open OGG file")
             }
+
+            vorbis_info* _info = ov_info(&_vorbis, -1);
+            if (_info->channels != 1) {
+                ov_clear(&_vorbis);
+                LUCARIA_RUNTIME_ERROR("Failed to open OGG file, only mono files are supported")
+            }
+
+            data.sample_rate = _info->rate;
+            float** _pcm_channels;
+            int _bitstream;
+            long _samples;
+            while ((_samples = ov_read_float(&_vorbis, &_pcm_channels, 512, &_bitstream)) > 0) {
+                for (long i = 0; i < _samples; ++i) {
+                    data.samples.push_back(_pcm_channels[0][i]);
+                }
+            }
+            if (_samples < 0) {
+                LUCARIA_RUNTIME_ERROR("Failed to read OGG file")
+            }
+
+            ov_clear(&_vorbis);
         }
-        if (_samples < 0) {
-            LUCARIA_RUNTIME_ERROR("Failed to read OGG file")
-        }
 
-        ov_clear(&_vorbis);
-    }
-
-}
-
-audio::audio(audio_data&& data)
-{
-    this->data = std::move(data);
-}
-
-audio::audio(const std::vector<char>& data_bytes)
-{
-    load_data_from_bytes(data, data_bytes);
-}
-
-audio::audio(const std::filesystem::path& data_path)
-{
-    _load_bytes(data_path, [this](const std::vector<char>& _data_bytes) {
-        load_data_from_bytes(data, _data_bytes);
-    });
-}
-
-detail::async_container<audio> fetch_audio(const std::filesystem::path& data_path)
-{
-    std::shared_ptr<std::promise<audio>> _promise = std::make_shared<std::promise<audio>>();
-    _fetch_bytes(data_path, [_promise](const std::vector<char>& _data_bytes) {
-        audio _audio(_data_bytes);
+        static async_container<audio_implementation> _fetch_audio_async(const std::filesystem::path& path)
+        {
+            std::shared_ptr<std::promise<audio_implementation>> _promise = std::make_shared<std::promise<audio_implementation>>();
+            _fetch_bytes(path, [_promise](const std::vector<char>& _data_bytes) {
+        audio_implementation _audio(_data_bytes);
         _promise->set_value(std::move(_audio)); }, true);
 
-    return detail::async_container<audio>(_promise->get_future());
+            return async_container<audio_implementation>(_promise->get_future());
+        }
+    }
+
+    audio_implementation::audio_implementation(const std::vector<char>& bytes)
+    {
+        _load_audio_bytes(data, bytes);
+    }
+
+    audio_implementation::audio_implementation(audio_data&& data)
+        : data(std::move(data))
+    {
+    }
+
+}
+
+audio_object audio_object::fetch(const std::filesystem::path& path)
+{
+    detail::resource_container<detail::audio_implementation>* _resource = detail::engine_assets().audios.get_or_create_by_path(path, [&] {
+        return detail::_fetch_audio_async(path);
+    });
+
+    return audio_object { _resource };
+}
+
+bool audio_object::has_value() const
+{
+    return _resource && _resource->is_ready();
+}
+
+audio_object::operator bool() const
+{
+    return has_value();
+}
+
+audio_object::audio_object(detail::resource_container<detail::audio_implementation>* resource)
+    : _resource(resource)
+{
 }
 
 }

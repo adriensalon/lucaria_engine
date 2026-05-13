@@ -1,36 +1,44 @@
 #pragma once
 
 #include <lucaria/common/audio_data.hpp>
-#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/platform.hpp>
+#include <lucaria/core/resource.hpp>
 
 namespace lucaria {
+namespace detail {
 
-/// @brief Represents runtime audio on the host
-struct audio {
-    LUCARIA_DELETE_DEFAULT(audio)
-    audio(const audio& other) = delete;
-    audio& operator=(const audio& other) = delete;
-    audio(audio&& other) = default;
-    audio& operator=(audio&& other) = default;
+    struct audio_implementation {
+        LUCARIA_DELETE_DEFAULT(audio_implementation)
+        audio_implementation(const audio_implementation& other) = delete;
+        audio_implementation& operator=(const audio_implementation& other) = delete;
+        audio_implementation(audio_implementation&& other) = default;
+        audio_implementation& operator=(audio_implementation&& other) = default;
 
-    /// @brief Creates audio from data
-    /// @param data to create from
-    audio(audio_data&& data);
+        audio_implementation(const std::vector<char>& bytes);
+        audio_implementation(audio_data&& data);
 
-    /// @brief Creates audio from bytes synchronously
-    /// @param data_bytes bytes to load from
-    audio(const std::vector<char>& data_bytes);
+        audio_data data;
+    };
 
-    /// @brief Loads audio from a file synchronously
-    /// @param data_path path to load from
-    audio(const std::filesystem::path& data_path);
+}
 
-    audio_data data;
+/// @brief
+struct audio_object {
+    audio_object() = default;
+    audio_object(const audio_object& other) = default;
+    audio_object& operator=(const audio_object& other) = default;
+    audio_object(audio_object&& other) = default;
+    audio_object& operator=(audio_object&& other) = default;
+
+    static audio_object fetch(const std::filesystem::path& path);
+
+    [[nodiscard]] bool has_value() const;
+
+    [[nodiscard]] explicit operator bool() const;
+
+private:
+    detail::resource_container<detail::audio_implementation>* _resource = nullptr;
+    explicit audio_object(detail::resource_container<detail::audio_implementation>* resource);
 };
-
-/// @brief Loads audio from a file asynchronously
-/// @param data_path path to load from
-[[nodiscard]] detail::async_container<audio> fetch_audio(const std::filesystem::path& data_path);
 
 }

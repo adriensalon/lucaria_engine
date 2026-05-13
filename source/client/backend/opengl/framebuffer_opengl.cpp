@@ -1,20 +1,9 @@
 #include <lucaria/core/framebuffer.hpp>
 
-#if LUCARIA_PLATFORM_ANDROID
-#include <EGL/egl.h>
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WEB
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WIN32
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#endif
-
 namespace lucaria {
 namespace {
 
-    static void check_complete()
+    static void _check_complete()
     {
 #if LUCARIA_CONFIG_DEBUG
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -79,9 +68,9 @@ namespace detail {
         glBindFramebuffer(GL_FRAMEBUFFER, implementation_opengl.id);
     }
 
-    void framebuffer_implementation::bind_color(const detail::texture_implementation& color)
+    void framebuffer_implementation::bind_color(const texture_implementation& color)
     {
-        const glm::uint _texture_handle = color.get_handle();
+        const GLuint _texture_handle = static_cast<GLuint>(color.implementation_opengl.id);
 
         if (implementation_opengl.texture_color_id && implementation_opengl.texture_color_id.value() == _texture_handle) {
             return;
@@ -96,18 +85,18 @@ namespace detail {
         glDrawBuffers(1, &_attachment);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-        check_complete();
+        _check_complete();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void framebuffer_implementation::bind_color(renderbuffer& color)
+    void framebuffer_implementation::bind_color(renderbuffer_implementation& color)
     {
-        if (implementation_opengl.renderbuffer_color_id && implementation_opengl.renderbuffer_color_id.value() == color.get_handle()) {
+        if (implementation_opengl.renderbuffer_color_id && implementation_opengl.renderbuffer_color_id.value() == color.implementation_opengl.id) {
             return;
         }
 
         const GLenum _attachment = GL_COLOR_ATTACHMENT0;
-        const GLuint _color_id = color.get_handle();
+        const GLuint _color_id = color.implementation_opengl.id;
         implementation_opengl.renderbuffer_color_id = _color_id;
         implementation_opengl.texture_color_id = std::nullopt;
         glBindFramebuffer(GL_FRAMEBUFFER, implementation_opengl.id);
@@ -115,17 +104,17 @@ namespace detail {
         glDrawBuffers(1, &_attachment);
         glReadBuffer(GL_COLOR_ATTACHMENT0);
 
-        check_complete();
+        _check_complete();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void framebuffer_implementation::bind_depth(detail::texture_implementation& depth)
+    void framebuffer_implementation::bind_depth(texture_implementation& depth)
     {
-        if (implementation_opengl.texture_depth_id && implementation_opengl.texture_depth_id.value() == depth.get_handle()) {
+        if (implementation_opengl.texture_depth_id && implementation_opengl.texture_depth_id.value() == depth.implementation_opengl.id) {
             return;
         }
 
-        const GLuint _depth_id = depth.get_handle();
+        const GLuint _depth_id = static_cast<GLuint>(depth.implementation_opengl.id);
         implementation_opengl.texture_depth_id = _depth_id;
         implementation_opengl.renderbuffer_depth_id = std::nullopt;
         glBindFramebuffer(GL_FRAMEBUFFER, implementation_opengl.id);
@@ -137,17 +126,17 @@ namespace detail {
             glReadBuffer(GL_NONE);
         }
 
-        check_complete();
+        _check_complete();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void framebuffer_implementation::bind_depth(renderbuffer& depth)
+    void framebuffer_implementation::bind_depth(renderbuffer_implementation& depth)
     {
-        if (implementation_opengl.renderbuffer_depth_id && implementation_opengl.renderbuffer_depth_id.value() == depth.get_handle()) {
+        if (implementation_opengl.renderbuffer_depth_id && implementation_opengl.renderbuffer_depth_id.value() == depth.implementation_opengl.id) {
             return;
         }
 
-        const GLuint _depth_id = depth.get_handle();
+        const GLuint _depth_id = depth.implementation_opengl.id;
         implementation_opengl.renderbuffer_depth_id = _depth_id;
         implementation_opengl.texture_depth_id = std::nullopt;
         glBindFramebuffer(GL_FRAMEBUFFER, implementation_opengl.id);
@@ -159,7 +148,7 @@ namespace detail {
             glReadBuffer(GL_NONE);
         }
 
-        check_complete();
+        _check_complete();
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 

@@ -8,11 +8,7 @@ namespace lucaria {
 
 /// @brief Uses a cubemap object as the skybox
 /// @param from the cubemap object
-void use_skybox_cubemap(cubemap& from);
-
-/// @brief Uses a cubemap object as the skybox
-/// @param from the cubemap object
-void use_skybox_cubemap(detail::async_container<cubemap>& from);
+void use_skybox_cubemap(const cubemap_object cubemap);
 
 void set_skybox_rotation(const glm::float32 rotation);
 

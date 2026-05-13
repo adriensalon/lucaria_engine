@@ -1,16 +1,11 @@
 #pragma once
 
-#include <unordered_map>
-
 #include <lucaria/core/geometry.hpp>
 #include <lucaria/core/resource.hpp>
 
 #include <lucaria/backend/opengl/mesh_opengl.hpp>
 
 namespace lucaria {
-
-struct mesh_object;
-
 namespace detail {
 
     enum struct mesh_attribute {
@@ -33,15 +28,11 @@ namespace detail {
         ~mesh_implementation();
 
         mesh_implementation(const geometry_implementation& geometry);
-        void update_attribute(const geometry_implementation& geometry, const mesh_attribute attribute, const glm::uint size, const glm::uint offset = 0);
-        void update_indices(const geometry_implementation& geometry, const glm::uint size, const glm::uint offset = 0);
-        [[nodiscard]] glm::uint get_size() const;
-        [[nodiscard]] glm::uint get_array_handle() const;
-        [[nodiscard]] glm::uint get_elements_handle() const;
-        [[nodiscard]] const std::unordered_map<mesh_attribute, glm::uint>& get_attribute_handles() const;
-        [[nodiscard]] const std::vector<glm::mat4>& get_invposes() const;
 
 		mesh_implementation_opengl implementation_opengl;
+
+        std::vector<float32x4x4> invposes;
+        uint32 size;
     };
 
 }

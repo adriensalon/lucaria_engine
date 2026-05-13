@@ -1,46 +1,49 @@
 #pragma once
 
-#include <glm/glm.hpp>
 #include <imgui.h>
 
-#include <lucaria/core/fetch.hpp>
+#include <lucaria/core/math.hpp>
 #include <lucaria/core/platform.hpp>
+#include <lucaria/core/resource.hpp>
 
 namespace lucaria {
+namespace detail {
 
-/// @brief Represents a runtime font on the device
-struct font {
-    LUCARIA_DELETE_DEFAULT(font)
-    font(const font& other) = delete;
-    font& operator=(const font& other) = delete;
-    font(font&& other) = default;
-    font& operator=(font&& other) = default;
+    struct font_implementation {
+        LUCARIA_DELETE_DEFAULT(font_implementation)
+        font_implementation(const font_implementation& other) = delete;
+        font_implementation& operator=(const font_implementation& other) = delete;
+        font_implementation(font_implementation&& other) = default;
+        font_implementation& operator=(font_implementation&& other) = default;
 
-    /// @brief Creates a font from bytes synchronously
-    /// @param data_bytes bytes to load from
-    /// @param font_size imgui size of the font
-    font(const std::vector<char>& data_bytes, const glm::float32 font_size);
+        font_implementation(const std::vector<char>& data_bytes, const float32 font_size);
 
-    /// @brief Loads a font from a file synchronously
-    /// @param data_path path to load from
-    /// @param font_size imgui size of the font
-    font(const std::filesystem::path& data_path, const glm::float32 font_size);
+        ImFont* font;
+    };
 
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] ImFont* get_handle();
-    
-    /// @brief Returns a handle to the underlying implementation
-    /// @return the underlying implementation handle
-    [[nodiscard]] const ImFont* get_handle() const;
+}
+
+struct font_object {
+    font_object() = default;
+    font_object(const font_object& other) = default;
+    font_object& operator=(const font_object& other) = default;
+    font_object(font_object&& other) = default;
+    font_object& operator=(font_object&& other) = default;
+
+    static font_object fetch(const std::filesystem::path& path, const float32 font_size);
+
+    /// @brief Checks if the font is ready to be used
+    /// @return true if the font is ready, false otherwise
+    [[nodiscard]] bool has_value() const;
+
+    /// @brief Conversion operator for the has_value member function
+    [[nodiscard]] explicit operator bool() const;
+
+	[[nodiscard]] ImFont* imgui_font() const;
 
 private:
-    ImFont* _handle;
+    detail::resource_container<detail::font_implementation>* _resource = nullptr;
+    explicit font_object(detail::resource_container<detail::font_implementation>* resource);
 };
-
-/// @brief Loads a font from a file asynchronously
-/// @param data_path path to load from
-/// @param font_size imgui size of the font
-[[nodiscard]] detail::async_container<font> fetch_font(const std::filesystem::path& data_path, const glm::float32 font_size);
 
 }

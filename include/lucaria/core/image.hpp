@@ -8,9 +8,6 @@
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
-
-struct image_object;
-
 namespace detail {
 
     struct image_implementation {

@@ -11,7 +11,7 @@ struct game_context {
 	/// @brief Creates a new scene and returns its object
 	/// @return the new scene object
 	template <typename SceneType>
-	[[nodiscard]] SceneType& emplace_scene();
+	SceneType& emplace_scene();
 
     // input
 
@@ -94,6 +94,15 @@ struct scene_context {
 
 	/// @brief Schedules the current scene for erasure at the end of the current frame. The scene will be removed from the engine and all its resources will be freed.
 	void mark_erase_self();
+	
+	template <typename UserComponentType>
+	UserComponentType& emplace_user_component(const scene_entity entity);
+
+	template <typename... ComponentTypes>
+	void each_view(const std::function<void(const scene_entity, ComponentTypes&&...)>& callback);
+
+	template <typename... ComponentTypes>
+	void each_view_self(const std::function<void(const scene_entity, ComponentTypes&&...)>& callback);
 
     // animator_component& emplace_animator(const scene_entity entity);
     // get animator

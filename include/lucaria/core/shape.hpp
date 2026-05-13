@@ -8,9 +8,6 @@
 #include <lucaria/core/geometry.hpp>
 
 namespace lucaria {
-
-struct shape_object;
-
 namespace detail {
 
     enum struct shape_algorithm {

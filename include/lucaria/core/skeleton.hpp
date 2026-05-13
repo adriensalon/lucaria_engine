@@ -6,9 +6,6 @@
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
-
-struct skeleton_object;
-
 namespace detail {
 
     struct skeleton_implementation {

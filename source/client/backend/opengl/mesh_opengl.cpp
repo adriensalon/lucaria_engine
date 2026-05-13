@@ -2,17 +2,6 @@
 
 #include <lucaria/core/mesh.hpp>
 
-#if LUCARIA_PLATFORM_ANDROID
-#include <EGL/egl.h>
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WEB
-#include <GLES3/gl3.h>
-#elif LUCARIA_PLATFORM_WIN32
-#include <glad/gl.h>
-#define GLFW_INCLUDE_NONE
-#include <GLFW/glfw3.h>
-#endif
-
 namespace lucaria {
 namespace detail {
 
@@ -145,12 +134,12 @@ namespace detail {
             LUCARIA_RUNTIME_ERROR("Object already owning resources")
         }
 
-        implementation_opengl.is_owning = true;
-        implementation_opengl.size = other.implementation_opengl.size;
+        implementation_opengl.is_owning = other.implementation_opengl.is_owning;
         implementation_opengl.array_id = other.implementation_opengl.array_id;
         implementation_opengl.elements_id = other.implementation_opengl.elements_id;
         implementation_opengl.attribute_ids = std::move(other.implementation_opengl.attribute_ids);
-        implementation_opengl.invposes = std::move(other.implementation_opengl.invposes);
+        invposes = std::move(other.invposes);
+        size = other.size;
 
         other.implementation_opengl.is_owning = false;
         return *this;
@@ -169,10 +158,9 @@ namespace detail {
 
     mesh_implementation::mesh_implementation(const geometry_implementation& from)
     {
-        implementation_opengl.size = 3 * static_cast<glm::uint>(from.data.indices.size());
         implementation_opengl.array_id = create_vertex_array();
         implementation_opengl.elements_id = create_elements_buffer(from.data.indices);
-        implementation_opengl.invposes = from.data.invposes;
+
         if (!from.data.positions.empty()) {
             implementation_opengl.attribute_ids[mesh_attribute::position] = create_attribute_buffer(from.data.positions);
         }
@@ -197,33 +185,13 @@ namespace detail {
         if (!from.data.weights.empty()) {
             implementation_opengl.attribute_ids[mesh_attribute::weights] = create_attribute_buffer(from.data.weights);
         }
+		
+		invposes = from.data.invposes;
+        size = 3 * static_cast<glm::uint>(from.data.indices.size());
+
         implementation_opengl.is_owning = true;
     }
 
-    glm::uint mesh_implementation::get_size() const
-    {
-        return implementation_opengl.size;
-    }
-
-    glm::uint mesh_implementation::get_array_handle() const
-    {
-        return implementation_opengl.array_id;
-    }
-
-    glm::uint mesh_implementation::get_elements_handle() const
-    {
-        return implementation_opengl.elements_id;
-    }
-
-    const std::unordered_map<mesh_attribute, glm::uint>& mesh_implementation::get_attribute_handles() const
-    {
-        return implementation_opengl.attribute_ids;
-    }
-
-    const std::vector<glm::mat4>& mesh_implementation::get_invposes() const
-    {
-        return implementation_opengl.invposes;
-    }
 }
 
 namespace _detail {

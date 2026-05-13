@@ -1,0 +1,46 @@
+#pragma once
+
+#include <lucaria/core/audio.hpp>
+#include <lucaria/core/math.hpp>
+
+namespace lucaria {
+namespace detail {
+
+struct sound_track_implementation {
+    LUCARIA_DELETE_DEFAULT(sound_track_implementation)
+    sound_track_implementation(const sound_track_implementation& other) = delete;
+    sound_track_implementation& operator=(const sound_track_implementation& other) = delete;
+    sound_track_implementation(sound_track_implementation&& other);
+    sound_track_implementation& operator=(sound_track_implementation&& other);
+    ~sound_track_implementation();
+
+    sound_track_implementation(const audio_implementation& from);
+	
+    bool is_owning;
+    uint32 id;
+    uint32 sample_rate;
+    uint32 samples_count;
+};
+
+}
+
+struct sound_track_object {
+	sound_track_object() = default;
+    sound_track_object(const sound_track_object& other) = default;
+    sound_track_object& operator=(const sound_track_object& other) = default;
+    sound_track_object(sound_track_object&& other) = default;
+    sound_track_object& operator=(sound_track_object&& other) = default;
+
+    static sound_track_object fetch(const std::filesystem::path& path);
+
+    [[nodiscard]] bool has_value() const;
+
+    [[nodiscard]] explicit operator bool() const;
+
+private:
+    detail::resource_container<detail::sound_track_implementation>* _resource = nullptr;
+    explicit sound_track_object(detail::resource_container<detail::sound_track_implementation>* resource);
+	friend struct speaker_component;
+};
+
+}

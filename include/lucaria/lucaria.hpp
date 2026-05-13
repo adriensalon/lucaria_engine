@@ -19,7 +19,7 @@
 #include <lucaria/core/shader.hpp>
 #include <lucaria/core/shape.hpp>
 #include <lucaria/core/skeleton.hpp>
-#include <lucaria/core/sound.hpp>
+#include <lucaria/core/sound_track.hpp>
 #include <lucaria/core/texture.hpp>
 
 #include <lucaria/ecs/animator.hpp>

@@ -5,9 +5,6 @@
 #include <lucaria/core/resource.hpp>
 
 namespace lucaria {
-
-struct geometry_object;
-
 namespace detail {
 
     struct geometry_implementation {

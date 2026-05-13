@@ -1,14 +1,13 @@
 #pragma once
 
+#include <imgui.h>
+
 #include <lucaria/core/image.hpp>
 #include <lucaria/core/resource.hpp>
 
 #include <lucaria/backend/opengl/texture_opengl.hpp>
 
 namespace lucaria {
-
-struct texture_object;
-
 namespace detail {
 
     struct texture_implementation {
@@ -19,31 +18,32 @@ namespace detail {
         texture_implementation& operator=(texture_implementation&& other);
         ~texture_implementation();
 
-        texture_implementation(const detail::image_implementation& image);
-        texture_implementation(const glm::uvec2 size);
-        void resize(const glm::uvec2 size);
-        [[nodiscard]] glm::uvec2 get_size() const;
-        [[nodiscard]] glm::uint get_handle() const;
+        texture_implementation(const image_implementation& image);
+        texture_implementation(const uint32x2 size);
+        void resize(const uint32x2 new_size);
+        [[nodiscard]] ImTextureID imgui_texture() const;
 
-		texture_implementation_opengl implementation_opengl;
+        texture_implementation_opengl implementation_opengl;
+
+        uint32x2 size;
     };
 
 }
 
 /// @brief Represents a texture on the device. Can be created from an image file or from an empty size.
 struct texture_object {
-	texture_object() = default;
-	texture_object(const texture_object& other) = default;
-	texture_object& operator=(const texture_object& other) = default;
-	texture_object(texture_object&& other) = default;
-	texture_object& operator=(texture_object&& other) = default;
+    texture_object() = default;
+    texture_object(const texture_object& other) = default;
+    texture_object& operator=(const texture_object& other) = default;
+    texture_object(texture_object&& other) = default;
+    texture_object& operator=(texture_object&& other) = default;
 
     /// TODO GO CONTEXT
-    static texture_object create(const glm::uvec2 size);
+    static texture_object create(const uint32x2 size);
 
     /// TODO GO CONTEXT
     static texture_object fetch(
-		const std::filesystem::path& path,
+        const std::filesystem::path& path,
         const std::optional<std::filesystem::path>& etc2_path = std::nullopt,
         const std::optional<std::filesystem::path>& s3tc_path = std::nullopt);
 
@@ -51,22 +51,18 @@ struct texture_object {
     /// @return true if the texture is ready, false otherwise
     [[nodiscard]] bool has_value() const;
 
-	/// @brief Conversion operator for the has_value member function
-	[[nodiscard]] explicit operator bool() const;
+    /// @brief Conversion operator for the has_value member function
+    [[nodiscard]] explicit operator bool() const;
 
     /// @brief Resizes the texture to the specified size
     /// @param size the new size of the texture
-    void resize(const glm::uvec2 size);
-
-    /// @brief Updates the pixels of the texture with the specified image data, size and offset
-    /// @param from the image data to update from
-    /// @param size the size of the image data
-    /// @param offset the offset within the texture to update
-    // void update_pixels(const image_cell& from, const glm::uvec2 size, const glm::uvec2 offset = { 0, 0 });
+    void resize(const uint32x2 new_size);
 
     /// @brief Gets the size of the texture
     /// @return the size of the texture
-    [[nodiscard]] glm::uvec2 get_size() const;
+    [[nodiscard]] uint32x2 size() const;
+
+    [[nodiscard]] ImTextureID imgui_texture() const;
 
 private:
     detail::resource_container<detail::texture_implementation>* _resource = nullptr;
