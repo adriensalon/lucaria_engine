@@ -4,11 +4,11 @@
 #include <lucaria/core/resource.hpp>
 
 #if LUCARIA_BACKEND_OPENGL
-#include <lucaria/backend/opengl/cubemap_opengl.hpp>
+#include <lucaria/core/backend/opengl/cubemap_opengl.hpp>
 #endif
 
 #if LUCARIA_BACKEND_PSPGU
-#include <lucaria/backend/pspgu/cubemap_pspgu.hpp>
+#include <lucaria/core/backend/pspgu/cubemap_pspgu.hpp>
 #endif
 
 namespace lucaria {

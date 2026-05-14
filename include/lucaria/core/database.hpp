@@ -14,7 +14,7 @@
 namespace lucaria {
 namespace detail {
 
-    struct asset_database {
+    struct resource_database {
         resource_manager<image_implementation> images = {};
         resource_manager<texture_implementation> textures = {};
         resource_manager<cubemap_implementation> cubemaps = {};
@@ -30,7 +30,38 @@ namespace detail {
         resource_manager<event_track_implementation> event_tracks = {};
     };
 
-    asset_database& engine_assets();
+    resource_database& engine_resources();
 
 }
+
+struct object_context {
+
+	/// @brief 
+	/// @param path 
+	/// @return 
+	[[nodiscard]] animation_object fetch_animation(const std::filesystem::path& path);
+
+	/// @brief 
+	/// @param path 
+	/// @return 
+	[[nodiscard]] audio_object fetch_audio(const std::filesystem::path& path);
+
+
+
+    /// @brief Creates a new texture with the specified size
+    /// @param size	the size of the texture to create
+    /// @return a texture object with an empty texture of the specified size
+    [[nodiscard]] texture_object emplace_texture(const uint32x2 size);
+
+    /// @brief Loads an image from a file asynchronously and uploads directly to the device,
+    /// lets the runtime choose the best format it can use without downloading the others
+    /// @param path path to load uncompressed image version from
+    /// @param etc2_path path to load ETC2 compressed image version from
+    /// @param s3tc_path path to load S3TC compressed image version from
+    [[nodiscard]] texture_object fetch_texture(
+        const std::filesystem::path& path,
+        const std::optional<std::filesystem::path>& etc2_path = std::nullopt,
+        const std::optional<std::filesystem::path>& s3tc_path = std::nullopt);
+};
+
 }

@@ -39,6 +39,14 @@
 #include <glad/gl.h>
 #endif
 
+#if LUCARIA_PLATFORM_PSP
+#include <pspkernel.h>
+#include <pspdebug.h>
+PSP_MODULE_INFO("777reroll", 0, 1, 0);
+PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER | THREAD_ATTR_VFPU);
+PSP_HEAP_SIZE_KB(-1024);
+#endif
+
 #define _STRINGIFY(x) #x
 #define _TO_STRING(x) _STRINGIFY(x)
 

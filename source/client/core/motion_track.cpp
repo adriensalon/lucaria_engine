@@ -78,7 +78,7 @@ namespace detail {
 
 motion_track_object motion_track_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::motion_track_implementation>* _resource = detail::engine_assets().motion_tracks.get_or_create_by_path(path, [&] {
+    detail::resource_container<detail::motion_track_implementation>* _resource = detail::engine_resources().motion_tracks.get_or_create_by_path(path, [&] {
         return detail::_fetch_motion_track_async(path);
     });
 

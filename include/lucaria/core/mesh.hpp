@@ -5,11 +5,11 @@
 #include <lucaria/core/resource.hpp>
 
 #if LUCARIA_BACKEND_OPENGL
-#include <lucaria/backend/opengl/mesh_opengl.hpp>
+#include <lucaria/core/backend/opengl/mesh_opengl.hpp>
 #endif
 
 #if LUCARIA_BACKEND_PSPGU
-#include <lucaria/backend/pspgu/mesh_pspgu.hpp>
+#include <lucaria/core/backend/pspgu/mesh_pspgu.hpp>
 #endif
 
 namespace lucaria {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/common/geometry_data.hpp>
+#include <lucaria/bin/geometry_data.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/resource.hpp>
 

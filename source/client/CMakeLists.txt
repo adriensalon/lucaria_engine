@@ -16,9 +16,9 @@ add_subdirectory(${LUCARIA_EXTERNAL_DIR}/stb ${CMAKE_CURRENT_BINARY_DIR}/externa
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/vorbis ${CMAKE_CURRENT_BINARY_DIR}/external/vorbis)
 add_subdirectory(${LUCARIA_EXTERNAL_DIR}/woff ${CMAKE_CURRENT_BINARY_DIR}/external/woff)
 
-file(GLOB_RECURSE lucaria_client_core_sources "core/*.cpp")
-file(GLOB_RECURSE lucaria_client_ecs_sources "ecs/*.cpp")
-add_library(lucaria_client STATIC ${lucaria_client_core_sources} ${lucaria_client_ecs_sources})
+file(GLOB lucaria_client_core_sources "core/*.cpp")
+file(GLOB lucaria_client_system_sources "system/*.cpp")
+add_library(lucaria_client STATIC ${lucaria_client_core_sources} ${lucaria_client_system_sources})
 set_target_properties(lucaria_client PROPERTIES CXX_STANDARD 17)
 target_compile_definitions(lucaria_client PUBLIC BT_NO_SIMD_OPERATOR_OVERLOADS) # ozz implements them already
 
@@ -107,12 +107,12 @@ elseif(PSP)
 endif()
 
 if(PSP)
-	file(GLOB_RECURSE lucaria_client_pspgu_sources "backend/pspgu/*.cpp")
+	file(GLOB lucaria_client_pspgu_sources "core/backend/pspgu/*.cpp")
 	target_sources(lucaria_client PRIVATE ${lucaria_client_pspgu_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_PSPGU=1)
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_OPENGL=0)
 else()
-	file(GLOB_RECURSE lucaria_client_opengl_sources "backend/opengl/*.cpp")
+	file(GLOB lucaria_client_opengl_sources "core/backend/opengl/*.cpp")
 	target_sources(lucaria_client PRIVATE ${lucaria_client_opengl_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_PSPGU=0)
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_OPENGL=1)

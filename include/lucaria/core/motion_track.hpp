@@ -2,9 +2,9 @@
 
 #include <ozz/animation/runtime/track.h>
 
+#include <lucaria/core/math.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/resource.hpp>
-#include <lucaria/core/math.hpp>
 
 namespace lucaria {
 namespace detail {

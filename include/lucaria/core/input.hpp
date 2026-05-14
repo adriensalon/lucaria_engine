@@ -1,19 +1,15 @@
 #pragma once
 
 #include <entt/entt.hpp>
-#include <glm/glm.hpp>
 #include <imgui.h>
 
 #include <functional>
 #include <unordered_map>
 #include <vector>
 
+#include <lucaria/core/math.hpp>
+
 namespace lucaria {
-namespace detail {
-
-	
-
-}
 
 /// @brief Buttons tracked by the implementation.
 /// If a keyboard is detected this is how the engine will index key events.
@@ -100,34 +96,46 @@ struct pointer_event {
     bool is_up = false;
 };
 
-/// @brief Gets if the implementation provides keyboard events
-/// @return if the feature is supported
 [[nodiscard]] bool get_is_keyboard_supported();
-
-/// @brief Gets if the implementation provides mouse events
-/// @return if the feature is supported
 [[nodiscard]] bool get_is_mouse_supported();
-
-/// @brief Gets if the implementation provides touch events
-/// @return if the feature is supported
 [[nodiscard]] bool get_is_touch_supported();
-
-/// @brief Gets the state of the tracked keyboard keys
-/// @return state of the keys
 [[nodiscard]] std::unordered_map<button_key, button_event>& get_buttons();
-
-/// @brief Gets the state of the tracked mouse buttons
-/// @return state of the mouse buttons
 [[nodiscard]] std::unordered_map<glm::uint, pointer_event>& get_pointers();
-
-/// @brief Gets the current mouse position
-/// Syntactic sugar for calling get_pointers()[0].position
-/// @return current mouse position
 [[nodiscard]] glm::vec2 get_mouse_position();
-
-/// @brief Gets the current mouse position delta from previous frame
-/// Syntactic sugar for calling get_pointers()[0].delta
-/// @return current mouse position delta from previous frame
 [[nodiscard]] glm::vec2& get_mouse_position_delta();
+
+struct input_context {
+
+    /// @brief Gets if the implementation provides keyboard events
+    /// @return if the feature is supported
+    [[nodiscard]] bool is_keyboard_supported();
+
+    /// @brief Gets if the implementation provides mouse events
+    /// @return if the feature is supported
+    [[nodiscard]] bool is_mouse_supported();
+
+    /// @brief Gets if the implementation provides touch events
+    /// @return if the feature is supported
+    [[nodiscard]] bool is_touch_supported();
+
+    /// @brief Gets the state of the tracked keyboard keys
+    /// @return state of the keys
+    [[nodiscard]] std::unordered_map<button_key, button_event>& button_events();
+
+    /// @brief Gets the state of the tracked mouse buttons
+    /// @return state of the mouse buttons
+    [[nodiscard]] std::unordered_map<uint32, pointer_event>& pointer_events();
+
+    /// @brief Gets the current mouse position
+    /// Syntactic sugar for calling pointer_events()[0].position
+    /// @return current mouse position
+    [[nodiscard]] float32x2 mouse_position();
+
+    /// @brief Gets the current mouse position delta from previous frame
+    /// Syntactic sugar for calling pointer_events()[0].delta
+    /// @return current mouse position delta from previous frame
+    [[nodiscard]] float32x2 mouse_position_delta();
+
+};
 
 }

@@ -56,7 +56,7 @@ namespace detail {
 
 animation_object animation_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::animation_implementation>* _resource = detail::engine_assets().animations.get_or_create_by_path(path, [&] {
+    detail::resource_container<detail::animation_implementation>* _resource = detail::engine_resources().animations.get_or_create_by_path(path, [&] {
         return detail::_fetch_animation_async(path);
     });
 

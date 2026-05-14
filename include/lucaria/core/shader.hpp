@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/common/shader_data.hpp>
+#include <lucaria/bin/shader_data.hpp>
 #include <lucaria/core/fetch.hpp>
 #include <lucaria/core/platform.hpp>
 

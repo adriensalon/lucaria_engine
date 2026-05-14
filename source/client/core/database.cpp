@@ -3,9 +3,9 @@
 namespace lucaria {
 namespace detail {
 
-    asset_database& engine_assets()
+    resource_database& engine_resources()
     {
-        static asset_database _database = {};
+        static resource_database _database = {};
         return _database;
     }
 

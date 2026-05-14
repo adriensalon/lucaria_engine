@@ -7,11 +7,11 @@
 #include <lucaria/core/resource.hpp>
 
 #if LUCARIA_BACKEND_OPENGL
-#include <lucaria/backend/opengl/texture_opengl.hpp>
+#include <lucaria/core/backend/opengl/texture_opengl.hpp>
 #endif
 
 #if LUCARIA_BACKEND_PSPGU
-#include <lucaria/backend/pspgu/texture_pspgu.hpp>
+#include <lucaria/core/backend/pspgu/texture_pspgu.hpp>
 #endif
 
 namespace lucaria {

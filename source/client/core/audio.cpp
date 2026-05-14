@@ -147,7 +147,7 @@ namespace detail {
 
 audio_object audio_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::audio_implementation>* _resource = detail::engine_assets().audios.get_or_create_by_path(path, [&] {
+    detail::resource_container<detail::audio_implementation>* _resource = detail::engine_resources().audios.get_or_create_by_path(path, [&] {
         return detail::_fetch_audio_async(path);
     });
 

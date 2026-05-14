@@ -3,7 +3,7 @@
 #include <array>
 #include <optional>
 
-#include <lucaria/common/image_data.hpp>
+#include <lucaria/bin/image_data.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/resource.hpp>
 

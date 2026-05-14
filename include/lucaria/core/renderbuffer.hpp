@@ -3,11 +3,11 @@
 #include <lucaria/core/texture.hpp>
 
 #if LUCARIA_BACKEND_OPENGL
-#include <lucaria/backend/opengl/renderbuffer_opengl.hpp>
+#include <lucaria/core/backend/opengl/renderbuffer_opengl.hpp>
 #endif
 
 #if LUCARIA_BACKEND_PSPGU
-#include <lucaria/backend/pspgu/renderbuffer_pspgu.hpp>
+#include <lucaria/core/backend/pspgu/renderbuffer_pspgu.hpp>
 #endif
 
 namespace lucaria {

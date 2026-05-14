@@ -3,11 +3,11 @@
 #include <lucaria/core/renderbuffer.hpp>
 
 #if LUCARIA_BACKEND_OPENGL
-#include <lucaria/backend/opengl/framebuffer_opengl.hpp>
+#include <lucaria/core/backend/opengl/framebuffer_opengl.hpp>
 #endif
 
 #if LUCARIA_BACKEND_PSPGU
-#include <lucaria/backend/pspgu/framebuffer_pspgu.hpp>
+#include <lucaria/core/backend/pspgu/framebuffer_pspgu.hpp>
 #endif
 
 namespace lucaria {
@@ -23,17 +23,17 @@ namespace detail {
         framebuffer_implementation();
         static void use_default();
         void use();
-        void bind_color(const detail::texture_implementation& color);
+        void bind_color(const texture_implementation& color);
         void bind_color(renderbuffer_implementation& color);
-        void bind_depth(detail::texture_implementation& depth);
+        void bind_depth(texture_implementation& depth);
         void bind_depth(renderbuffer_implementation& depth);
-		
+
 #if LUCARIA_BACKEND_OPENGL
-		framebuffer_implementation_opengl implementation_opengl;
+        framebuffer_implementation_opengl implementation_opengl;
 #endif
-		
+
 #if LUCARIA_BACKEND_PSPGU
-		framebuffer_implementation_pspgu implementation_pspgu;
+        framebuffer_implementation_pspgu implementation_pspgu;
 #endif
     };
 

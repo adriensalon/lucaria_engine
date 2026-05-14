@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/common/audio_data.hpp>
+#include <lucaria/bin/audio_data.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/resource.hpp>
 

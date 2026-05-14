@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/common/event_track_data.hpp>
+#include <lucaria/bin/event_track_data.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/resource.hpp>
 
