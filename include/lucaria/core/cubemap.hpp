@@ -7,6 +7,10 @@
 #include <lucaria/backend/opengl/cubemap_opengl.hpp>
 #endif
 
+#if LUCARIA_BACKEND_PSPGU
+#include <lucaria/backend/pspgu/cubemap_pspgu.hpp>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -22,6 +26,10 @@ namespace detail {
 
 #if LUCARIA_BACKEND_OPENGL
         cubemap_implementation_opengl implementation_opengl;
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+        cubemap_implementation_pspgu implementation_pspgu;
 #endif
     };
 

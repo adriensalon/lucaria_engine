@@ -6,6 +6,10 @@
 #include <lucaria/backend/opengl/renderbuffer_opengl.hpp>
 #endif
 
+#if LUCARIA_BACKEND_PSPGU
+#include <lucaria/backend/pspgu/renderbuffer_pspgu.hpp>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -22,6 +26,10 @@ namespace detail {
 
 #if LUCARIA_BACKEND_OPENGL
         renderbuffer_implementation_opengl implementation_opengl;
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+        renderbuffer_implementation_pspgu implementation_pspgu;
 #endif
 
         uint32 sampling_count;

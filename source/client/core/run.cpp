@@ -748,6 +748,34 @@ namespace {
 
 ImGuiContext* _create_shared_context()
 {
+
+    ImGuiContext* _context = ImGui::CreateContext(_shared_font_atlas.get());
+    ImGui::SetCurrentContext(_context);
+
+#if LUCARIA_PLATFORM_ANDROID
+    static bool _must_install_callbacks = true;
+    if (_must_install_callbacks) {
+        ImGui_ImplAndroid_Init(g_app->window);
+        _must_install_callbacks = false;
+    }
+
+#elif LUCARIA_PLATFORM_WIN32
+    static bool _must_install_callbacks = true;
+    if (_must_install_callbacks) {
+        ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
+        _must_install_callbacks = false;
+    }
+#endif
+
+#if LUCARIA_BACKEND_OPENGL
+    ImGui_ImplOpenGL3_Init("#version 300 es");
+    ImGui_ImplOpenGL3_DestroyFontsTexture();
+#endif
+
+    ImGui::GetIO().Fonts->SetTexID(_shared_font_texture->imgui_texture());
+    ImGui::GetIO().IniFilename = nullptr;
+	
+#if LUCARIA_BACKEND_OPENGL
     struct ImGui_ImplOpenGL3_Data {
         GLuint GlVersion;
         char GlslVersionString[32];
@@ -771,32 +799,10 @@ ImGuiContext* _create_shared_context()
         ImGui_ImplOpenGL3_Data() { memset((void*)this, 0, sizeof(*this)); }
     };
 
-    ImGuiContext* _context = ImGui::CreateContext(_shared_font_atlas.get());
-    ImGui::SetCurrentContext(_context);
-
-#if LUCARIA_PLATFORM_ANDROID
-    static bool _must_install_callbacks = true;
-    if (_must_install_callbacks) {
-        ImGui_ImplAndroid_Init(g_app->window);
-        _must_install_callbacks = false;
-    }
-
-#elif LUCARIA_PLATFORM_WIN32
-    static bool _must_install_callbacks = true;
-    if (_must_install_callbacks) {
-        ImGui_ImplGlfw_InitForOpenGL(glfw_window, true);
-        _must_install_callbacks = false;
-    }
-#endif
-
-    ImGui_ImplOpenGL3_Init("#version 300 es");
-    ImGui_ImplOpenGL3_DestroyFontsTexture();
-    ImGui::GetIO().Fonts->SetTexID(_shared_font_texture->imgui_texture());
-    ImGui::GetIO().IniFilename = nullptr;
-
     if (ImGui_ImplOpenGL3_Data* bd = static_cast<ImGui_ImplOpenGL3_Data*>(ImGui::GetIO().BackendRendererUserData)) {
         bd->FontTexture = (GLuint)(uintptr_t)(_shared_font_texture->imgui_texture());
     }
+#endif
 
     return _context;
 }

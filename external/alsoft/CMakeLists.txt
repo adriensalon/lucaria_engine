@@ -201,10 +201,6 @@ if(WIN32)
         "upstream/alsoft/alc/backends/dsound.cpp")
 elseif(PSP)
     set(HAVE_WAVE 1)
-    list(APPEND alsoft_sources
-        "upstream/alsoft/alc/backends/winmm.cpp"
-        "upstream/alsoft/alc/backends/wasapi.cpp"
-        "upstream/alsoft/alc/backends/dsound.cpp")
 elseif(ANDROID)
     set(HAVE_OPENSL 1)
 	set(HAVE_PTHREAD_H 1)

@@ -36,7 +36,6 @@ void runtime_error(std::string_view file, const int line, const std::string& mes
 
 void runtime_openal_assert(std::string_view file, const int line)
 {
-#if !LUCARIA_PLATFORM_PSP // lol TODO
     std::string _reason;
     ALenum _al_error = alGetError();
     if (_al_error != AL_NO_ERROR) {
@@ -52,7 +51,6 @@ void runtime_openal_assert(std::string_view file, const int line)
             _reason = "out of memory";
         runtime_error(file, line, "Failed OpenAL operation with result '" + _reason + "'");
     }
-#endif
 }
 
 void runtime_opengl_assert(std::string_view file, const int line)

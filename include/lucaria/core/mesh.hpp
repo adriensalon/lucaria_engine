@@ -8,6 +8,10 @@
 #include <lucaria/backend/opengl/mesh_opengl.hpp>
 #endif
 
+#if LUCARIA_BACKEND_PSPGU
+#include <lucaria/backend/pspgu/mesh_pspgu.hpp>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -34,6 +38,10 @@ namespace detail {
 
 #if LUCARIA_BACKEND_OPENGL
         mesh_implementation_opengl implementation_opengl;
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+        mesh_implementation_pspgu implementation_pspgu;
 #endif
 
         std::vector<float32x4x4> invposes;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <AL/al.h>
+
 #include <lucaria/core/audio.hpp>
 #include <lucaria/core/math.hpp>
 
@@ -17,7 +19,7 @@ struct sound_track_implementation {
     sound_track_implementation(const audio_implementation& from);
 	
     bool is_owning;
-    uint32 id;
+    ALuint id;
     uint32 sample_rate;
     uint32 samples_count;
 };

@@ -107,6 +107,8 @@ elseif(PSP)
 endif()
 
 if(PSP)
+	file(GLOB_RECURSE lucaria_client_pspgu_sources "backend/pspgu/*.cpp")
+	target_sources(lucaria_client PRIVATE ${lucaria_client_pspgu_sources})
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_PSPGU=1)
 	target_compile_definitions(lucaria_client PUBLIC -DLUCARIA_BACKEND_OPENGL=0)
 else()

@@ -3,10 +3,15 @@
 #include <imgui.h>
 
 #include <lucaria/core/image.hpp>
+#include <lucaria/core/math.hpp>
 #include <lucaria/core/resource.hpp>
 
 #if LUCARIA_BACKEND_OPENGL
 #include <lucaria/backend/opengl/texture_opengl.hpp>
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+#include <lucaria/backend/pspgu/texture_pspgu.hpp>
 #endif
 
 namespace lucaria {
@@ -28,6 +33,10 @@ namespace detail {
 
 #if LUCARIA_BACKEND_OPENGL
         texture_implementation_opengl implementation_opengl;
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+        texture_implementation_pspgu implementation_pspgu;
 #endif
 
         uint32x2 size;

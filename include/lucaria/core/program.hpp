@@ -9,6 +9,10 @@
 #include <lucaria/backend/opengl/program_opengl.hpp>
 #endif
 
+#if LUCARIA_BACKEND_PSPGU
+#include <lucaria/backend/pspgu/program_pspgu.hpp>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -36,6 +40,10 @@ struct program_implementation {
 
 #if LUCARIA_BACKEND_OPENGL
 	program_implementation_opengl implementation_opengl;
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+	program_implementation_pspgu implementation_pspgu;
 #endif
 };
 

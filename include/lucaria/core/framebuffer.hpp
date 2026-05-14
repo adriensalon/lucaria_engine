@@ -6,6 +6,10 @@
 #include <lucaria/backend/opengl/framebuffer_opengl.hpp>
 #endif
 
+#if LUCARIA_BACKEND_PSPGU
+#include <lucaria/backend/pspgu/framebuffer_pspgu.hpp>
+#endif
+
 namespace lucaria {
 namespace detail {
 
@@ -24,7 +28,13 @@ namespace detail {
         void bind_depth(detail::texture_implementation& depth);
         void bind_depth(renderbuffer_implementation& depth);
 		
+#if LUCARIA_BACKEND_OPENGL
 		framebuffer_implementation_opengl implementation_opengl;
+#endif
+		
+#if LUCARIA_BACKEND_PSPGU
+		framebuffer_implementation_pspgu implementation_pspgu;
+#endif
     };
 
 }
