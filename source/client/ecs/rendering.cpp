@@ -1,6 +1,13 @@
 #include <iostream>
 
+#if LUCARIA_BACKEND_OPENGL
 #include <backends/imgui_impl_opengl3.h>
+#endif
+
+#if LUCARIA_BACKEND_PSPGU
+#include <backends/imgui_impl_psp.h>
+#endif
+
 #include <imgui.h>
 
 #include <lucaria/core/input.hpp>
@@ -537,7 +544,6 @@ struct rendering_system {
 
     static void clear_screen()
     {
-        const GLbitfield _bits = clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
         const glm::uvec2 _screen_size = get_screen_size();
 
         // setup screen buffers
@@ -551,7 +557,12 @@ struct rendering_system {
             scene_color_texture.value().resize(_screen_size);
         }
         if (!scene_depth_renderbuffer) {
+#if LUCARIA_BACKEND_OPENGL
             scene_depth_renderbuffer = detail::renderbuffer_implementation(_screen_size, GL_DEPTH_COMPONENT24);
+#endif
+#if LUCARIA_BACKEND_PSPGU
+            // scene_depth_renderbuffer = detail::renderbuffer_implementation(_screen_size, GL_DEPTH_COMPONENT24); TODO
+#endif
             scene_framebuffer->bind_depth(scene_depth_renderbuffer.value());
         } else {
             scene_depth_renderbuffer->resize(_screen_size);
@@ -559,12 +570,8 @@ struct rendering_system {
 
         // clear screen
         scene_framebuffer->use();
-        glViewport(0, 0, _screen_size.x, _screen_size.y);
-        glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-        if (clear_depth) {
-            glDepthMask(GL_TRUE);
-        }
-        glClear(_bits);
+		detail::program_implementation::viewport(_screen_size);
+		detail::program_implementation::clear(true);
     }
 
     static void compute_projection()
@@ -845,10 +852,14 @@ struct rendering_system {
                         }
                     }
 
-                    interface._imgui_framebuffer->use();
-                    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-                    glClear(GL_COLOR_BUFFER_BIT);
+                    interface._imgui_framebuffer->use();			
+					detail::program_implementation::clear(false);
+#if LUCARIA_BACKEND_OPENGL
                     ImGui_ImplOpenGL3_NewFrame();
+#endif
+#if LUCARIA_BACKEND_PSPGU
+                    ImGui_ImplPSP_NewFrame();
+#endif
                     ImGui::NewFrame();
 
                     interface._imgui_callback();
@@ -868,7 +879,12 @@ struct rendering_system {
 
                     ImGui::SetCurrentContext(interface._imgui_context);
                     ImGui::Render();
+#if LUCARIA_BACKEND_OPENGL
                     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
+#if LUCARIA_BACKEND_PSPGU
+                    ImGui_ImplPSP_RenderDrawData(ImGui::GetDrawData());
+#endif
 
                     scene_framebuffer->use();
                     detail::program_implementation& _unlit_program = _persistent_unlit_program.value();
@@ -890,7 +906,12 @@ struct rendering_system {
     static void draw_imgui_screen_interfaces()
     {
         ImGui::SetCurrentContext(_screen_context);
+#if LUCARIA_BACKEND_OPENGL
         ImGui_ImplOpenGL3_NewFrame();
+#endif
+#if LUCARIA_BACKEND_PSPGU
+        ImGui_ImplPSP_NewFrame();
+#endif
         ImGui::NewFrame();
 
         each_scene([](entt::registry& scene) {
@@ -903,7 +924,12 @@ struct rendering_system {
 
         ImGui::SetCurrentContext(_screen_context);
         ImGui::Render();
+#if LUCARIA_BACKEND_OPENGL
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+#endif
+#if LUCARIA_BACKEND_PSPGU
+        ImGui_ImplPSP_RenderDrawData(ImGui::GetDrawData());
+#endif
     }
 
     static void draw_post_processing()

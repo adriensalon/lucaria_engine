@@ -46,6 +46,7 @@ function(lucaria_build_game
         WORKING_DIRECTORY "${game_output_dir}"
         COMMENT "Building ${TARGET} for ${PLATFORM}..."
         VERBATIM
-        USES_TERMINAL)
+        USES_TERMINAL
+		JOB_SERVER_AWARE TRUE)
 
 endfunction()

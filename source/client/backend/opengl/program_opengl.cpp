@@ -332,6 +332,24 @@ namespace detail {
     }
 #endif
 
+	void program_implementation::viewport(const uint32x2 size)
+	{
+		glViewport(0, 0, size.x, size.y);
+	}
+	
+	void program_implementation::clear(const bool clear_depth)
+	{
+		static bool _is_clear_color_set = false;
+		if (!_is_clear_color_set) {
+			glClearColor(1.f, 1.f, 1.f, 1.f);
+		}
+		const GLbitfield _bits = clear_depth ? GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT : GL_COLOR_BUFFER_BIT;
+		if (clear_depth) {
+			glDepthMask(GL_TRUE);
+		}
+		glClear(_bits);
+	}
+
 }
 
 }

@@ -26,9 +26,9 @@ struct program_implementation {
 
     program_implementation(const shader& vertex, const shader& fragment);
     void use() const;
-    void bind_attribute(const std::string& name, const detail::mesh_implementation& mesh, const detail::mesh_attribute attribute);
-    void bind_uniform(const std::string& name, const detail::cubemap_implementation& cubemap, const glm::uint slot = 0) const;
-	void bind_uniform(const std::string& name, const detail::texture_implementation& texture, const glm::uint slot = 0) const;
+    void bind_attribute(const std::string& name, const mesh_implementation& mesh, const mesh_attribute attribute);
+    void bind_uniform(const std::string& name, const cubemap_implementation& cubemap, const glm::uint slot = 0) const;
+	void bind_uniform(const std::string& name, const texture_implementation& texture, const glm::uint slot = 0) const;
     template <typename T>
     void bind_uniform(const std::string& name, const T& value);
 	void draw(const bool use_depth = true) const;
@@ -37,6 +37,9 @@ struct program_implementation {
     void bind_guizmo(const std::string& name, const _detail::guizmo_mesh& from);
     void draw_guizmo() const;    
 #endif
+
+	static void viewport(const uint32x2 size);
+	static void clear(const bool clear_depth = false);
 
 #if LUCARIA_BACKEND_OPENGL
 	program_implementation_opengl implementation_opengl;

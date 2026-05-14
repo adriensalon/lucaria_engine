@@ -247,7 +247,7 @@ if(WIN32)
 elseif(ANDROID)
     target_link_libraries(lucaria_external_alsoft PRIVATE log OpenSLES)
 elseif(PSP)
-    target_link_libraries(lucaria_external_alsoft PRIVATE log pspaudio)
+    target_link_libraries(lucaria_external_alsoft PRIVATE pspaudio)
 endif()
 
 target_compile_definitions(lucaria_external_alsoft PUBLIC AL_LIBTYPE_STATIC)

@@ -9,7 +9,7 @@
 namespace lucaria {
 namespace detail {
 
-    struct framebuffer_implementation_opengl {
+    struct framebuffer_implementation_pspgu {
         bool is_owning = false;
         void* color = nullptr;
 		void* depth = nullptr;
