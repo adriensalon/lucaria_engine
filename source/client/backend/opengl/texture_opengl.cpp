@@ -39,7 +39,7 @@ namespace detail {
 
         implementation_opengl.is_owning = other.implementation_opengl.is_owning;
         implementation_opengl.id = other.implementation_opengl.id;
-		size = other.size;
+        size = other.size;
 
         other.implementation_opengl.is_owning = false;
         return *this;
@@ -114,12 +114,45 @@ namespace detail {
         implementation_opengl.is_owning = true;
     }
 
-    void texture_implementation::resize(const glm::uvec2 new_size)
+    void texture_implementation::resize(const uint32x2 new_size)
     {
         if (size != new_size) {
             size = new_size;
             glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+        }
+    }
+
+    void texture_implementation::update(const image_implementation& from)
+    {
+		const GLsizei _pixels_count = static_cast<GLsizei>(from.data.pixels.size());
+        const GLubyte* _pixels_ptr = from.data.pixels.data();
+
+        glBindTexture(GL_TEXTURE_2D, implementation_opengl.id);
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        switch (from.data.channels) {
+        case 3:
+            if (from.data.is_compressed_etc && _is_etc2_supported) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB8_ETC2, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGB_S3TC_DXT1_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            } else {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, from.data.width, from.data.height, 0, GL_RGB, GL_UNSIGNED_BYTE, _pixels_ptr);
+            }
+            break;
+        case 4:
+            if (from.data.is_compressed_etc && _is_etc2_supported) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA8_ETC2_EAC, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            } else if (from.data.is_compressed_s3tc && _is_s3tc_supported) {
+                glCompressedTexImage2D(GL_TEXTURE_2D, 0, COMPRESSED_RGBA_S3TC_DXT5_EXT, from.data.width, from.data.height, 0, _pixels_count, _pixels_ptr);
+            } else {
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, from.data.width, from.data.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels_ptr);
+            }
+            break;
+        default:
+            LUCARIA_RUNTIME_ERROR("Invalid texture channels count, must be 3 or 4")
+            break;
         }
     }
 

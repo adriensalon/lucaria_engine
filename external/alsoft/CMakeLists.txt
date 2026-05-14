@@ -199,13 +199,13 @@ if(WIN32)
         "upstream/alsoft/alc/backends/winmm.cpp"
         "upstream/alsoft/alc/backends/wasapi.cpp"
         "upstream/alsoft/alc/backends/dsound.cpp")
-elif(PSP)
+elseif(PSP)
     set(HAVE_WAVE 1)
     list(APPEND alsoft_sources
         "upstream/alsoft/alc/backends/winmm.cpp"
         "upstream/alsoft/alc/backends/wasapi.cpp"
         "upstream/alsoft/alc/backends/dsound.cpp")
-elif(ANDROID)
+elseif(ANDROID)
     set(HAVE_OPENSL 1)
 	set(HAVE_PTHREAD_H 1)
     list(APPEND alsoft_sources 
@@ -248,9 +248,9 @@ endif()
 
 if(WIN32)
     target_link_libraries(lucaria_external_alsoft PUBLIC winmm avrt ole32 uuid dsound dxguid)
-elif(ANDROID)
+elseif(ANDROID)
     target_link_libraries(lucaria_external_alsoft PRIVATE log OpenSLES)
-elif(PSP)
+elseif(PSP)
     target_link_libraries(lucaria_external_alsoft PRIVATE log pspaudio)
 endif()
 

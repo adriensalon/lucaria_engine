@@ -1,6 +1,3 @@
-#include <iostream>
-
-#include <backends/imgui_impl_opengl3.h>
 #include <woff2/decode.h>
 
 #include <lucaria/core/database.hpp>

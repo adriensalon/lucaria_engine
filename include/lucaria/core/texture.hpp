@@ -23,6 +23,7 @@ namespace detail {
         texture_implementation(const image_implementation& image);
         texture_implementation(const uint32x2 size);
         void resize(const uint32x2 new_size);
+        void update(const image_implementation& image);
         [[nodiscard]] ImTextureID imgui_texture() const;
 
 #if LUCARIA_BACKEND_OPENGL

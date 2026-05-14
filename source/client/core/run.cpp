@@ -6,13 +6,17 @@
 
 #include <AL/al.h>
 #include <AL/alc.h>
-#include <backends/imgui_impl_opengl3.h>
 #include <imgui_internal.h>
+
+#if LUCARIA_BACKEND_OPENGL
+#include <backends/imgui_impl_opengl3.h>
+#endif
 
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/input.hpp>
 #include <lucaria/core/platform.hpp>
 #include <lucaria/core/run.hpp>
+#include <lucaria/core/texture.hpp>
 
 #if LUCARIA_PLATFORM_ANDROID
 #include <EGL/egl.h>
@@ -21,11 +25,13 @@
 #include <android_native_app_glue.h>
 #include <backends/imgui_impl_android.h>
 #include <unistd.h>
-#elif LUCARIA_PLATFORM_WEB
+#endif
+#if LUCARIA_PLATFORM_WEB
 #include <GLES3/gl3.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
-#elif LUCARIA_PLATFORM_WIN32
+#endif
+#if LUCARIA_PLATFORM_WIN32
 #define GLFW_INCLUDE_NONE
 #define GLAD_GL_IMPLEMENTATION
 #include <GLFW/glfw3.h>
@@ -46,7 +52,7 @@ bool _is_etc2_supported = false;
 bool _is_s3tc_supported = false;
 std::vector<entt::registry>* global_scenes = nullptr;
 std::unique_ptr<ImFontAtlas> _shared_font_atlas = nullptr;
-glm::uint _shared_font_texture = 0;
+std::optional<detail::texture_implementation> _shared_font_texture = std::nullopt;
 ImGuiContext* _screen_context = nullptr;
 ImGuiContext* _create_shared_context();
 void _reupload_shared_font_texture();
@@ -710,7 +716,6 @@ namespace {
 #endif
         ImGui::GetIO().DisplaySize = ImVec2(static_cast<glm::float32>(screen_size.x), static_cast<glm::float32>(screen_size.y));
 
-		
         // update
         update_callback();
 
@@ -786,11 +791,11 @@ ImGuiContext* _create_shared_context()
 
     ImGui_ImplOpenGL3_Init("#version 300 es");
     ImGui_ImplOpenGL3_DestroyFontsTexture();
-    ImGui::GetIO().Fonts->SetTexID((ImTextureID)(intptr_t)_shared_font_texture);
+    ImGui::GetIO().Fonts->SetTexID(_shared_font_texture->imgui_texture());
     ImGui::GetIO().IniFilename = nullptr;
 
     if (ImGui_ImplOpenGL3_Data* bd = static_cast<ImGui_ImplOpenGL3_Data*>(ImGui::GetIO().BackendRendererUserData)) {
-        bd->FontTexture = _shared_font_texture;
+        bd->FontTexture = (GLuint)(uintptr_t)(_shared_font_texture->imgui_texture());
     }
 
     return _context;
@@ -802,22 +807,23 @@ void _reupload_shared_font_texture()
     int _width, _height;
     _shared_font_atlas->GetTexDataAsRGBA32(&_pixels, &_width, &_height);
 
-    if (_shared_font_texture == 0) {
-        glGenTextures(1, &_shared_font_texture);
+    image_data _font_atlas_data = {};
+    _font_atlas_data.channels = 4;
+    _font_atlas_data.is_compressed_etc = false;
+    _font_atlas_data.is_compressed_s3tc = false;
+    _font_atlas_data.width = _width;
+    _font_atlas_data.height = _height;
+    _font_atlas_data.pixels = std::vector<glm::uint8>(_pixels, _pixels + (_width * _height * 4));
+
+    detail::image_implementation _font_atlas_image(std::move(_font_atlas_data));
+
+    if (!_shared_font_texture) {
+        _shared_font_texture.emplace(_font_atlas_image);
+    } else {
+        _shared_font_texture->update(_font_atlas_image);
     }
 
-    GLint _last_texture_handle = 0;
-    glGetIntegerv(GL_TEXTURE_BINDING_2D, &_last_texture_handle);
-    glBindTexture(GL_TEXTURE_2D, _shared_font_texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-#ifdef GL_UNPACK_ROW_LENGTH
-    glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, _pixels);
-    glBindTexture(GL_TEXTURE_2D, _last_texture_handle);
-
-    _shared_font_atlas->SetTexID((ImTextureID)(intptr_t)_shared_font_texture);
+    _shared_font_atlas->SetTexID(_shared_font_texture->imgui_texture());
 }
 
 void set_update_callback(
