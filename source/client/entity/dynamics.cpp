@@ -2,9 +2,9 @@
 
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/run.hpp>
-#include <lucaria/system/dynamics.hpp>
-#include <lucaria/system/rigidbody.hpp>
-#include <lucaria/system/transform.hpp>
+#include <lucaria/entity/dynamics.hpp>
+#include <lucaria/entity/rigidbody.hpp>
+#include <lucaria/entity/transform.hpp>
 
 namespace lucaria {
 

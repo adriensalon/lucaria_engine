@@ -3,6 +3,7 @@
 
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/image.hpp>
+#include <lucaria/core/stream.hpp>
 
 
 namespace lucaria {
@@ -12,7 +13,6 @@ std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::fi
 
 extern bool _is_etc2_supported;
 extern bool _is_s3tc_supported;
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
 
 const std::filesystem::path& _resolve_image_path(
     const std::filesystem::path& data_path,
@@ -43,6 +43,7 @@ std::vector<std::filesystem::path> _resolve_image_paths(
 }
 
 namespace detail {
+
     namespace {
 
         static void _load_image_bytes(image_data& data, const std::vector<char>& bytes)
@@ -118,7 +119,7 @@ namespace detail {
 
                 // binary raw format
             } else {
-                _detail::bytes_stream _stream(bytes);
+                bytes_stream _stream(bytes);
 #if LUCARIA_JSON
                 cereal::JSONInputArchive _archive(_stream);
 #else
@@ -135,7 +136,7 @@ namespace detail {
         {
             const std::filesystem::path& _image_path = _resolve_image_path(data_path, etc2_path, s3tc_path);
             std::shared_ptr<std::promise<image_implementation>> _promise = std::make_shared<std::promise<image_implementation>>();
-            _fetch_bytes(_image_path, [_promise](const std::vector<char>& _bytes) {
+            fetch_bytes(_image_path, [_promise](const std::vector<char>& _bytes) {
         image_implementation _image(_bytes);
         _promise->set_value(std::move(_image)); }, true);
 
@@ -161,7 +162,7 @@ image_object image_object::fetch(
     const std::optional<std::filesystem::path>& etc2_path,
     const std::optional<std::filesystem::path>& s3tc_path)
 {
-    detail::resource_container<detail::image_implementation>* _resource = detail::engine_assets().images.get_or_create_by_path(path, [&] {
+    detail::resource_container<detail::image_implementation>* _resource = detail::engine_resources().images.get_or_create_by_path(path, [&] {
         return detail::_fetch_image_async(path, etc2_path, s3tc_path);
     });
 

@@ -2,7 +2,7 @@
 #include <AL/alc.h>
 
 #include <lucaria/core/error.hpp>
-#include <lucaria/system/speaker.hpp>
+#include <lucaria/entity/speaker.hpp>
 
 namespace lucaria {
 

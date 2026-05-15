@@ -1,6 +1,5 @@
 #pragma once
 
-#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/sound_track.hpp>
 
 namespace lucaria {

@@ -1,4 +1,4 @@
-#include <lucaria/system/interface.hpp>
+#include <lucaria/entity/interface.hpp>
 
 namespace lucaria {
 

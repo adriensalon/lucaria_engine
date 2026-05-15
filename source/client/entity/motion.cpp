@@ -5,10 +5,10 @@
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/run.hpp>
-#include <lucaria/system/animator.hpp>
-#include <lucaria/system/model.hpp>
-#include <lucaria/system/rigidbody.hpp>
-#include <lucaria/system/transform.hpp>
+#include <lucaria/entity/animator.hpp>
+#include <lucaria/entity/model.hpp>
+#include <lucaria/entity/rigidbody.hpp>
+#include <lucaria/entity/transform.hpp>
 
 namespace lucaria {
 

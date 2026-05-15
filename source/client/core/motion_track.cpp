@@ -4,21 +4,20 @@
 #include <ozz/base/io/archive.h>
 #include <ozz/base/memory/allocator.h>
 
-#include <lucaria/core/motion_track.hpp>
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/math.hpp>
+#include <lucaria/core/motion_track.hpp>
+#include <lucaria/core/stream.hpp>
 
 namespace lucaria {
-
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace detail {
+
     namespace {
 
         static void _load_motion_track_bytes(ozz::animation::Float3Track& translation_handle, ozz::animation::QuaternionTrack& rotation_handle, const std::vector<char>& bytes)
         {
-            _detail::ozz_bytes_stream _ozz_stream(bytes);
+            ozz_bytes_stream _ozz_stream(bytes);
             ozz::io::IArchive _ozz_archive(&_ozz_stream);
             if (!_ozz_archive.TestTag<ozz::animation::Float3Track>()) {
                 LUCARIA_RUNTIME_ERROR("Failed to load float3 track, archive doesn't contain the expected object type")
@@ -36,7 +35,7 @@ namespace detail {
         static async_container<motion_track_implementation> _fetch_motion_track_async(const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<motion_track_implementation>> _promise = std::make_shared<std::promise<motion_track_implementation>>();
-            _fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
+            fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
         motion_track_implementation _motion_track(_bytes);
         _promise->set_value(std::move(_motion_track)); }, true);
 

@@ -66,8 +66,8 @@ ImGuiContext* _create_shared_context();
 void _reupload_shared_font_texture();
 
 // import
-extern std::unordered_map<button_key, button_event> _button_events;
-extern std::unordered_map<glm::uint, pointer_event> _pointer_events;
+extern std::unordered_map<input_key, detail::key_event> _button_events;
+extern std::unordered_map<glm::uint, detail::pointer_event> _pointer_events;
 extern void _system_compute_motion();
 extern void _system_compute_dynamics();
 extern void _system_compute_mixer();
@@ -103,62 +103,62 @@ namespace {
     static bool is_fullscreen = false;
 
 #if LUCARIA_PLATFORM_WEB || LUCARIA_PLATFORM_ANDROID
-    static std::unordered_map<std::string, button_key> emscripten_keyboard_mappings = {
-        { "a", button_key::keyboard_a },
-        { "z", button_key::keyboard_z },
-        { "e", button_key::keyboard_e },
-        { "r", button_key::keyboard_r },
-        { "t", button_key::keyboard_t },
-        { "y", button_key::keyboard_y },
-        { "u", button_key::keyboard_u },
-        { "i", button_key::keyboard_i },
-        { "o", button_key::keyboard_o },
-        { "p", button_key::keyboard_p },
-        { "q", button_key::keyboard_q },
-        { "s", button_key::keyboard_s },
-        { "d", button_key::keyboard_d },
-        { "f", button_key::keyboard_f },
-        { "g", button_key::keyboard_g },
-        { "h", button_key::keyboard_h },
-        { "j", button_key::keyboard_j },
-        { "k", button_key::keyboard_k },
-        { "l", button_key::keyboard_l },
-        { "m", button_key::keyboard_m },
-        { "w", button_key::keyboard_w },
-        { "x", button_key::keyboard_x },
-        { "c", button_key::keyboard_c },
-        { "v", button_key::keyboard_v },
-        { "b", button_key::keyboard_b },
-        { "n", button_key::keyboard_n },
+    static std::unordered_map<std::string, input_key> emscripten_keyboard_mappings = {
+        { "a", input_key::keyboard_a },
+        { "z", input_key::keyboard_z },
+        { "e", input_key::keyboard_e },
+        { "r", input_key::keyboard_r },
+        { "t", input_key::keyboard_t },
+        { "y", input_key::keyboard_y },
+        { "u", input_key::keyboard_u },
+        { "i", input_key::keyboard_i },
+        { "o", input_key::keyboard_o },
+        { "p", input_key::keyboard_p },
+        { "q", input_key::keyboard_q },
+        { "s", input_key::keyboard_s },
+        { "d", input_key::keyboard_d },
+        { "f", input_key::keyboard_f },
+        { "g", input_key::keyboard_g },
+        { "h", input_key::keyboard_h },
+        { "j", input_key::keyboard_j },
+        { "k", input_key::keyboard_k },
+        { "l", input_key::keyboard_l },
+        { "m", input_key::keyboard_m },
+        { "w", input_key::keyboard_w },
+        { "x", input_key::keyboard_x },
+        { "c", input_key::keyboard_c },
+        { "v", input_key::keyboard_v },
+        { "b", input_key::keyboard_b },
+        { "n", input_key::keyboard_n },
     };
 #elif LUCARIA_PLATFORM_WIN32
-    static std::unordered_map<int, button_key> glfw_keyboard_mappings = {
-        { GLFW_KEY_A, button_key::keyboard_a },
-        { GLFW_KEY_Z, button_key::keyboard_z },
-        { GLFW_KEY_E, button_key::keyboard_e },
-        { GLFW_KEY_R, button_key::keyboard_r },
-        { GLFW_KEY_T, button_key::keyboard_t },
-        { GLFW_KEY_Y, button_key::keyboard_y },
-        { GLFW_KEY_U, button_key::keyboard_u },
-        { GLFW_KEY_I, button_key::keyboard_i },
-        { GLFW_KEY_O, button_key::keyboard_o },
-        { GLFW_KEY_P, button_key::keyboard_p },
-        { GLFW_KEY_Q, button_key::keyboard_q },
-        { GLFW_KEY_S, button_key::keyboard_s },
-        { GLFW_KEY_D, button_key::keyboard_d },
-        { GLFW_KEY_F, button_key::keyboard_f },
-        { GLFW_KEY_G, button_key::keyboard_g },
-        { GLFW_KEY_H, button_key::keyboard_h },
-        { GLFW_KEY_J, button_key::keyboard_j },
-        { GLFW_KEY_K, button_key::keyboard_k },
-        { GLFW_KEY_L, button_key::keyboard_l },
-        { GLFW_KEY_M, button_key::keyboard_m },
-        { GLFW_KEY_W, button_key::keyboard_w },
-        { GLFW_KEY_X, button_key::keyboard_x },
-        { GLFW_KEY_C, button_key::keyboard_c },
-        { GLFW_KEY_V, button_key::keyboard_v },
-        { GLFW_KEY_B, button_key::keyboard_b },
-        { GLFW_KEY_N, button_key::keyboard_n },
+    static std::unordered_map<int, input_key> glfw_keyboard_mappings = {
+        { GLFW_KEY_A, input_key::keyboard_a },
+        { GLFW_KEY_Z, input_key::keyboard_z },
+        { GLFW_KEY_E, input_key::keyboard_e },
+        { GLFW_KEY_R, input_key::keyboard_r },
+        { GLFW_KEY_T, input_key::keyboard_t },
+        { GLFW_KEY_Y, input_key::keyboard_y },
+        { GLFW_KEY_U, input_key::keyboard_u },
+        { GLFW_KEY_I, input_key::keyboard_i },
+        { GLFW_KEY_O, input_key::keyboard_o },
+        { GLFW_KEY_P, input_key::keyboard_p },
+        { GLFW_KEY_Q, input_key::keyboard_q },
+        { GLFW_KEY_S, input_key::keyboard_s },
+        { GLFW_KEY_D, input_key::keyboard_d },
+        { GLFW_KEY_F, input_key::keyboard_f },
+        { GLFW_KEY_G, input_key::keyboard_g },
+        { GLFW_KEY_H, input_key::keyboard_h },
+        { GLFW_KEY_J, input_key::keyboard_j },
+        { GLFW_KEY_K, input_key::keyboard_k },
+        { GLFW_KEY_L, input_key::keyboard_l },
+        { GLFW_KEY_M, input_key::keyboard_m },
+        { GLFW_KEY_W, input_key::keyboard_w },
+        { GLFW_KEY_X, input_key::keyboard_x },
+        { GLFW_KEY_C, input_key::keyboard_c },
+        { GLFW_KEY_V, input_key::keyboard_v },
+        { GLFW_KEY_B, input_key::keyboard_b },
+        { GLFW_KEY_N, input_key::keyboard_n },
     };
 #endif
 
@@ -252,7 +252,7 @@ namespace {
             _is_mouse_locked = true;
         }
 
-        const button_key _key(emscripten_keyboard_mappings[std::string(event->key)]);
+        const input_key _key(emscripten_keyboard_mappings[std::string(event->key)]);
         if (event_type == EMSCRIPTEN_EVENT_KEYDOWN) {
             _button_events[_key].state = true;
         } else if (event_type == EMSCRIPTEN_EVENT_KEYUP) {
@@ -271,7 +271,7 @@ namespace {
             ImGui::GetIO().AddMousePosEvent(_new_position.x, _new_position.y);
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEDOWN) {
             const glm::uint _button = event->button;
-            _button_events[static_cast<button_key>(_button)].state = true;
+            _button_events[static_cast<input_key>(_button)].state = true;
             ImGui::GetIO().AddMouseButtonEvent(_button, true);
 
             // process lock
@@ -287,7 +287,7 @@ namespace {
             }
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEUP) {
             const glm::uint _button = event->button;
-            _button_events[static_cast<button_key>(_button)].state = false;
+            _button_events[static_cast<input_key>(_button)].state = false;
             ImGui::GetIO().AddMouseButtonEvent(_button, false);
         } else if (event_type == EMSCRIPTEN_EVENT_CLICK) {
         } else if (event_type == EMSCRIPTEN_EVENT_MOUSEOVER) {
@@ -516,29 +516,29 @@ namespace {
     static void glfw_mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
     {
         if (action == GLFW_PRESS) {
-            _button_events[static_cast<button_key>(button)].state = true;
+            _button_events[static_cast<input_key>(button)].state = true;
         } else if (action == GLFW_RELEASE) {
-            _button_events[static_cast<button_key>(button)].state = false;
+            _button_events[static_cast<input_key>(button)].state = false;
         }
     }
 
 #endif
 
-    void update_mouse_lock()
-    {
-#if LUCARIA_PLATFORM_WEB
-        if (_is_touch_supported) {
-            EmscriptenFullscreenChangeEvent _fullscreen;
-            emscripten_assert(emscripten_get_fullscreen_status(&_fullscreen));
-            _is_mouse_locked = _fullscreen.isFullscreen;
+//     void update_mouse_lock()
+//     {
+// #if LUCARIA_PLATFORM_WEB
+//         if (_is_touch_supported) {
+//             EmscriptenFullscreenChangeEvent _fullscreen;
+//             emscripten_assert(emscripten_get_fullscreen_status(&_fullscreen));
+//             _is_mouse_locked = _fullscreen.isFullscreen;
 
-        } else {
-            EmscriptenPointerlockChangeEvent _pointer_lock;
-            emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
-            _is_mouse_locked = _pointer_lock.isActive;
-        }
-#endif
-    }
+//         } else {
+//             EmscriptenPointerlockChangeEvent _pointer_lock;
+//             emscripten_assert(emscripten_get_pointerlock_status(&_pointer_lock));
+//             _is_mouse_locked = _pointer_lock.isActive;
+//         }
+// #endif
+//     }
 
     static void setup_opengl()
     {

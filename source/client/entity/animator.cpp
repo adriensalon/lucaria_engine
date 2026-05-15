@@ -1,5 +1,5 @@
 #include <lucaria/core/error.hpp>
-#include <lucaria/system/animator.hpp>
+#include <lucaria/entity/animator.hpp>
 
 namespace lucaria {
 

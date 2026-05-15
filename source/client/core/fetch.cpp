@@ -20,14 +20,11 @@ extern android_app* g_app;
 #endif
 
 namespace lucaria {
-
-void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
-void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist);
+namespace detail {
 
 namespace {
 
-    static std::atomic<std::size_t> _fetches_waiting = 0;
+    static std::atomic<uint32> _fetches_waiting = 0;
     static std::optional<std::filesystem::path> _fetch_path = std::nullopt;
 
     static void _fetch_bytes_impl(const std::filesystem::path& file_path, std::function<void(std::vector<char>)> callback, bool persist)
@@ -59,7 +56,7 @@ namespace {
         };
         _emscripten_fetch_attr.onerror = [](emscripten_fetch_t* fetch) {
             _callback_type* _callback_ptr = static_cast<_callback_type*>(fetch->userData);
-            std::fprintf(stderr, "_fetch_bytes error: %s (%d)\n", fetch->statusText, fetch->status);
+            std::fprintf(stderr, "fetch_bytes error: %s (%d)\n", fetch->statusText, fetch->status);
             delete _callback_ptr;
             emscripten_fetch_close(fetch);
             std::terminate();
@@ -75,25 +72,24 @@ namespace {
         _async_context* _context = new _async_context { _fetch_file_path, callback };
         emscripten_async_call(+[](void* user_data) {
                 std::unique_ptr<_async_context> _context_inner(static_cast<_async_context*>(user_data));
-                _load_bytes(_context_inner->context_path, _context_inner->context_callback);
+                load_bytes(_context_inner->context_path, _context_inner->context_callback);
                 _fetches_waiting--; }, _context, 0);
 #endif
 
 #if LUCARIA_PLATFORM_ANDROID || LUCARIA_PLATFORM_WIN32
         std::thread([_fetch_file_path, callback]() {
-            _load_bytes(_fetch_file_path, callback);
+            load_bytes(_fetch_file_path, callback);
             _fetches_waiting--;
         }).detach();
 #endif
     }
 }
 
-void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback)
+void load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback)
 {
     std::string _path_str = file_path.string();
 
 #if LUCARIA_PLATFORM_ANDROID
-
     AAssetManager* _asset_manager = lucaria::g_app->activity->assetManager;
     AAsset* _asset = AAssetManager_open(_asset_manager, _path_str.c_str(), AASSET_MODE_STREAMING);
     if (!_asset) {
@@ -107,9 +103,9 @@ void _load_bytes(const std::filesystem::path& file_path, const std::function<voi
         LUCARIA_RUNTIME_ERROR("read failed: " + _path_str)
     }
     callback(buffer);
+#endif
 
-#else
-
+#if !LUCARIA_PLATFORM_ANDROID
     std::ifstream _fstream(file_path, std::ios::binary);
     if (!_fstream) {
         LUCARIA_RUNTIME_ERROR("open failed: " + _path_str)
@@ -126,25 +122,27 @@ void _load_bytes(const std::filesystem::path& file_path, const std::function<voi
         LUCARIA_RUNTIME_ERROR("read failed: " + _path_str)
     }
     callback(std::move(_bytes));
-
 #endif
 }
 
-void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist)
+void fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist)
 {
     _fetch_bytes_impl(file_path, [callback](std::vector<char> bytes) { callback(bytes); }, persist);
 }
 
-void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist)
+void fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist)
 {
     const std::size_t _size = file_paths.size();
+
     if (_size == 0) {
         static const std::vector<std::vector<char>> _empty;
         callback(_empty);
         return;
     }
+
     std::shared_ptr<std::vector<std::vector<char>>> _shared_slots = std::make_shared<std::vector<std::vector<char>>>(_size);
     std::shared_ptr<std::atomic<std::size_t>> _shared_pending = std::make_shared<std::atomic<std::size_t>>(_size);
+
     for (std::size_t _index = 0; _index < _size; ++_index) {
         _fetch_bytes_impl(file_paths[_index], [_index, _shared_slots, _shared_pending, callback](std::vector<char> bytes) {
                 (*_shared_slots)[_index] = std::move(bytes);
@@ -160,87 +158,10 @@ void set_fetch_path(const std::filesystem::path& fetch_path)
     _fetch_path = fetch_path;
 }
 
-std::size_t get_fetches_waiting()
+uint32 async_fetches_waiting()
 {
     return _fetches_waiting.load();
 }
 
-namespace _detail {
-
-    bytes_streambuf::bytes_streambuf(const std::vector<char>& data)
-    {
-        char* begin = const_cast<char*>(data.data());
-        char* end = begin + data.size();
-        setg(begin, begin, end);
-    }
-
-    bytes_stream::bytes_stream(const std::vector<char>& data)
-        : std::istream(&_buffer)
-        , _buffer(data)
-    {
-        this->setstate(std::ios::goodbit);
-    }
-
-    ozz_bytes_stream::ozz_bytes_stream(const std::vector<char>& data)
-        : _bytes(data)
-        , _position(0)
-    {
-    }
-
-    bool ozz_bytes_stream::opened() const
-    {
-        // the stream is always "opened" when constructed
-        return true;
-    }
-
-    std::size_t ozz_bytes_stream::Read(void* buffer, std::size_t size)
-    {
-        std::size_t remaining = _bytes.size() - _position;
-        std::size_t to_read = std::min(size, remaining);
-        std::memcpy(buffer, _bytes.data() + _position, to_read);
-        _position += to_read;
-        return to_read;
-    }
-
-    std::size_t ozz_bytes_stream::Write(const void* buffer, std::size_t size)
-    {
-        // not implemented since this is a read only stream
-        return 0;
-    }
-
-    int ozz_bytes_stream::Seek(int offset, Origin origin)
-    {
-        int new_position = 0;
-        switch (origin) {
-        case kSet:
-            new_position = offset;
-            break;
-        case kCurrent:
-            new_position = static_cast<int>(_position + offset);
-            break;
-        case kEnd:
-            new_position = static_cast<int>(_bytes.size() + offset);
-            break;
-        default:
-            return -1;
-        }
-        if (new_position < 0 || static_cast<std::size_t>(new_position) > _bytes.size()) {
-            return -1;
-        }
-        _position = new_position;
-        return 0;
-    }
-
-    int ozz_bytes_stream::Tell() const
-    {
-        return static_cast<int>(_position);
-    }
-
-    std::size_t ozz_bytes_stream::Size() const
-    {
-        return _bytes.size();
-    }
-
 }
-
 }

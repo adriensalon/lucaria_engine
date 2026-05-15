@@ -14,12 +14,12 @@
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/renderbuffer.hpp>
 #include <lucaria/core/run.hpp>
-#include <lucaria/system/animator.hpp>
-#include <lucaria/system/interface.hpp>
-#include <lucaria/system/model.hpp>
-#include <lucaria/system/rendering.hpp>
-#include <lucaria/system/rigidbody.hpp>
-#include <lucaria/system/transform.hpp>
+#include <lucaria/entity/animator.hpp>
+#include <lucaria/entity/interface.hpp>
+#include <lucaria/entity/model.hpp>
+#include <lucaria/entity/rendering.hpp>
+#include <lucaria/entity/rigidbody.hpp>
+#include <lucaria/entity/transform.hpp>
 
 namespace lucaria {
 
@@ -570,8 +570,8 @@ struct rendering_system {
 
         // clear screen
         scene_framebuffer->use();
-		detail::program_implementation::viewport(_screen_size);
-		detail::program_implementation::clear(true);
+        detail::program_implementation::viewport(_screen_size);
+        detail::program_implementation::clear(true);
     }
 
     static void compute_projection()
@@ -622,7 +622,6 @@ struct rendering_system {
         glm::mat4 followW1 = glm::mat4_cast(qFollow1);
         followW1[3] = followW0[3];
         _follow->set_transform_warp(followW1);
-
     }
 
     static void compute_view_projection()
@@ -646,8 +645,7 @@ struct rendering_system {
             // Bone world pos. This is intentionally evaluated after mixer/animation.
             const glm::mat4 boneLocal = _follow_animator->get_bone_transform(_follow_bone_name);
             const glm::vec3 boneWorld = glm::vec3((followW * boneLocal)[3]);
-			// const glm::vec3 boneWorld = glm::vec3(followW[3]);
-
+            // const glm::vec3 boneWorld = glm::vec3(followW[3]);
 
             const float boomDist = -0.23f;
             const float camHeight = 0.f;
@@ -681,7 +679,7 @@ struct rendering_system {
             }
 
             detail::mesh_implementation& _skybox_mesh = _persistent_skybox_mesh.value();
-           	detail::program_implementation& _skybox_program = _persistent_skybox_program.value();
+            detail::program_implementation& _skybox_program = _persistent_skybox_program.value();
             detail::cubemap_implementation& _skybox_cubemap = skybox_cubemap._resource->get();
             const glm::mat4 _skybox_rotation_matrix = glm::rotate(glm::identity<glm::mat4>(), glm::radians(_skybox_rotation), glm::vec3(0, 1, 0));
             const glm::mat4 _no_translation_view_projection = camera_projection * glm::mat4(glm::mat3(camera_view)) * _skybox_rotation_matrix;
@@ -846,14 +844,14 @@ struct rendering_system {
                                 (1.f - _raycasted_uvs.value().y) * interface._viewport_size.y
                             };
                             ImGui::GetIO().MousePos = ImVec2(interface._interaction_screen_position.value().x, interface._interaction_screen_position.value().y);
-                            ImGui::GetIO().MouseDown[0] = get_buttons()[button_key::mouse_left].state;
+                            ImGui::GetIO().MouseDown[0] = detail::get_buttons()[input_key::mouse_left].state;
                         } else {
                             interface._interaction_screen_position = std::nullopt;
                         }
                     }
 
-                    interface._imgui_framebuffer->use();			
-					detail::program_implementation::clear(false);
+                    interface._imgui_framebuffer->use();
+                    detail::program_implementation::clear(false);
 #if LUCARIA_BACKEND_OPENGL
                     ImGui_ImplOpenGL3_NewFrame();
 #endif
@@ -988,10 +986,10 @@ struct rendering_system {
         _dynamics_world->debugDrawWorld();
 
         // show/hide from key
-        if (!last_show_physics_guizmos_key && get_buttons()[button_key::keyboard_o].state) {
+        if (!last_show_physics_guizmos_key && detail::get_buttons()[input_key::keyboard_o].state) {
             show_physics_guizmos = !show_physics_guizmos;
         }
-        last_show_physics_guizmos_key = get_buttons()[button_key::keyboard_o].state;
+        last_show_physics_guizmos_key = detail::get_buttons()[input_key::keyboard_o].state;
 
         // draw guizmos
         if (show_physics_guizmos) {
@@ -1046,7 +1044,7 @@ void _system_compute_rendering()
     rendering_system::draw_skybox();
     rendering_system::draw_blockout_meshes();
     rendering_system::draw_unlit_meshes();
-    if (!LUCARIA_PLATFORM_WEB || !get_is_touch_supported()) {
+    if (!LUCARIA_PLATFORM_WEB || !detail::get_is_touch_supported()) {
         rendering_system::draw_unlit_skinned_meshes();
     }
     rendering_system::draw_imgui_spatial_interfaces();

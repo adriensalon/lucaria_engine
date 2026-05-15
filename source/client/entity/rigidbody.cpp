@@ -1,8 +1,8 @@
 #include <btBulletDynamicsCommon.h>
 
 #include <lucaria/core/math.hpp>
-#include <lucaria/system/dynamics.hpp>
-#include <lucaria/system/rigidbody.hpp>
+#include <lucaria/entity/dynamics.hpp>
+#include <lucaria/entity/rigidbody.hpp>
 
 namespace lucaria {
 

@@ -5,12 +5,11 @@
 #include <lucaria/core/audio.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/database.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
-
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace detail {
+	
     namespace {
 
         struct _vorbis_bytes_stream {
@@ -125,7 +124,7 @@ namespace detail {
         static async_container<audio_implementation> _fetch_audio_async(const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<audio_implementation>> _promise = std::make_shared<std::promise<audio_implementation>>();
-            _fetch_bytes(path, [_promise](const std::vector<char>& _data_bytes) {
+            fetch_bytes(path, [_promise](const std::vector<char>& _data_bytes) {
         audio_implementation _audio(_data_bytes);
         _promise->set_value(std::move(_audio)); }, true);
 

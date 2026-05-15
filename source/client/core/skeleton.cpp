@@ -6,17 +6,17 @@
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/skeleton.hpp>
+#include <lucaria/core/stream.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
-
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace detail {
+
     namespace {
 
         static void _load_skeleton_bytes(ozz::animation::Skeleton& handle, const std::vector<char>& data_bytes)
         {
-            _detail::ozz_bytes_stream _ozz_stream(data_bytes);
+            ozz_bytes_stream _ozz_stream(data_bytes);
             ozz::io::IArchive _ozz_archive(&_ozz_stream);
             if (!_ozz_archive.TestTag<ozz::animation::Skeleton>()) {
                 LUCARIA_RUNTIME_ERROR("Failed to load skeleton, archive doesn't contain the expected object type")
@@ -30,7 +30,7 @@ namespace detail {
         static async_container<skeleton_implementation> _fetch_skeleton_async(const std::filesystem::path& data_path)
         {
             std::shared_ptr<std::promise<skeleton_implementation>> _promise = std::make_shared<std::promise<skeleton_implementation>>();
-            _fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
+            fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
         skeleton_implementation _skeleton(_bytes);
         _promise->set_value(std::move(_skeleton)); }, true);
 
@@ -54,7 +54,7 @@ namespace detail {
 
 skeleton_object skeleton_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::skeleton_implementation>* _resource = detail::engine_assets().skeletons.get_or_create_by_path(path, [&] {
+    detail::resource_container<detail::skeleton_implementation>* _resource = detail::engine_resources().skeletons.get_or_create_by_path(path, [&] {
         return detail::_fetch_skeleton_async(path);
     });
 

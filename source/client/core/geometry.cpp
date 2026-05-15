@@ -3,17 +3,17 @@
 
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/geometry.hpp>
+#include <lucaria/core/stream.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
-
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace detail {
+
     namespace {
 
         static void _load_geometry_bytes(geometry_data& data, const std::vector<char>& bytes)
         {
-            _detail::bytes_stream _stream(bytes);
+            bytes_stream _stream(bytes);
 #if LUCARIA_JSON
             cereal::JSONInputArchive _archive(_stream);
 #else
@@ -25,7 +25,7 @@ namespace detail {
         static async_container<geometry_implementation> _fetch_geometry_async(const std::filesystem::path& data_path)
         {
             std::shared_ptr<std::promise<geometry_implementation>> _promise = std::make_shared<std::promise<geometry_implementation>>();
-            _fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
+            fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
         geometry_implementation _geometry(_bytes);
         _promise->set_value(std::move(_geometry)); }, true);
 
@@ -47,7 +47,7 @@ namespace detail {
 
 geometry_object geometry_object::fetch(const std::filesystem::path& path)
 {
-    detail::resource_container<detail::geometry_implementation>* _resource = detail::engine_assets().geometries.get_or_create_by_path(path, [&] {
+    detail::resource_container<detail::geometry_implementation>* _resource = detail::engine_resources().geometries.get_or_create_by_path(path, [&] {
         return detail::_fetch_geometry_async(path);
     });
 

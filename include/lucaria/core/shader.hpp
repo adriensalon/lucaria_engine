@@ -1,7 +1,6 @@
 #pragma once
 
 #include <lucaria/bin/shader_data.hpp>
-#include <lucaria/core/fetch.hpp>
 #include <lucaria/core/platform.hpp>
 
 namespace lucaria {
@@ -13,33 +12,18 @@ struct shader {
     shader(shader&& other) = default;
     shader& operator=(shader&& other) = default;
 
-    /// @brief Creates a shader from data
-    /// @param data to create from
     shader(shader_data&& data);
-
-    /// @brief Creates a shader from bytes synchronously
-    /// @param image_bytes bytes to load from
     shader(const std::vector<char>& data_bytes);
-
-    /// @brief Loads a shader from a file synchronously
-    /// @param data_path path to load from
-    shader(const std::filesystem::path& data_path);
-
     /// @brief $name
-    /// @param name 
-    /// @param value 
     void configure_field(const std::string& name, const std::string& value);
-
     /// @brief name< ... >name
-    /// @param name 
-    /// @param enable 
     void configure_section(const std::string& name, const bool enable = true);
 
     shader_data data;
 };
 
-/// @brief Loads a shader from a file asynchronously
-/// @param data_path path to load from
-[[nodiscard]] detail::async_container<shader> fetch_shader(const std::filesystem::path data_path);
+// /// @brief Loads a shader from a file asynchronously
+// /// @param data_path path to load from
+// [[nodiscard]] detail::async_container<shader> fetch_shader(const std::filesystem::path data_path);
 
 }

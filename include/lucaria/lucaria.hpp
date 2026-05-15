@@ -17,53 +17,19 @@
 #include <lucaria/core/program.hpp>
 #include <lucaria/core/renderbuffer.hpp>
 #include <lucaria/core/run.hpp>
+#include <lucaria/core/scene.hpp>
 #include <lucaria/core/shader.hpp>
 #include <lucaria/core/shape.hpp>
 #include <lucaria/core/skeleton.hpp>
-#include <lucaria/core/scene.hpp>
 #include <lucaria/core/sound_track.hpp>
 #include <lucaria/core/texture.hpp>
 
-#include <lucaria/system/animator.hpp>
-#include <lucaria/system/dynamics.hpp>
-#include <lucaria/system/interface.hpp>
-#include <lucaria/system/mixer.hpp>
-#include <lucaria/system/model.hpp>
-#include <lucaria/system/rendering.hpp>
-#include <lucaria/system/rigidbody.hpp>
-#include <lucaria/system/speaker.hpp>
-#include <lucaria/system/transform.hpp>
-
-namespace lucaria {
-
-/// @brief Represents the context of the current scene, which can be used to create entities, add components and so on.
-struct game_context {
-
-    /// @brief Creates a new scene and returns its object
-    /// @return the new scene object
-    template <typename SceneType>
-    SceneType& emplace_scene();
-
-    /// @brief
-    input_context input;
-
-    /// @brief
-    fetch_context fetch;
-
-    /// @brief
-    object_context object;
-
-    /// @brief
-    scene_context scene;
-
-    /// @brief
-    dynamics_context dynamics;
-
-    /// @brief
-    mixer_context mixer;
-
-    /// @brief
-    rendering_context rendering;
-};
-
-}
+#include <lucaria/entity/animator.hpp>
+#include <lucaria/entity/dynamics.hpp>
+#include <lucaria/entity/interface.hpp>
+#include <lucaria/entity/mixer.hpp>
+#include <lucaria/entity/model.hpp>
+#include <lucaria/entity/rendering.hpp>
+#include <lucaria/entity/rigidbody.hpp>
+#include <lucaria/entity/speaker.hpp>
+#include <lucaria/entity/transform.hpp>

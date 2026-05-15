@@ -8,17 +8,17 @@
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/math.hpp>
+#include <lucaria/core/stream.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
-
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace detail {
+	
     namespace {
 
         static void _load_animation_bytes(ozz::animation::Animation& handle, const std::vector<char>& bytes)
         {
-            _detail::ozz_bytes_stream _ozz_stream(bytes);
+            ozz_bytes_stream _ozz_stream(bytes);
             ozz::io::IArchive _ozz_archive(&_ozz_stream);
             if (!_ozz_archive.TestTag<ozz::animation::Animation>()) {
                 LUCARIA_RUNTIME_ERROR("Failed to load animation, archive doesn't contain the expected object type")
@@ -32,7 +32,7 @@ namespace detail {
         static async_container<animation_implementation> _fetch_animation_async(const std::filesystem::path& path)
         {
             std::shared_ptr<std::promise<animation_implementation>> _promise = std::make_shared<std::promise<animation_implementation>>();
-            _fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
+            fetch_bytes(path, [_promise](const std::vector<char>& _bytes) {
         animation_implementation _animation(_bytes);
         _promise->set_value(std::move(_animation)); }, true);
 

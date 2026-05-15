@@ -1,4 +1,4 @@
-#include <lucaria/system/model.hpp>
+#include <lucaria/entity/model.hpp>
 
 namespace lucaria {
 

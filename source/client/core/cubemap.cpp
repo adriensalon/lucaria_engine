@@ -4,6 +4,7 @@
 #include <lucaria/core/cubemap.hpp>
 #include <lucaria/core/error.hpp>
 #include <lucaria/core/database.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
 
@@ -11,9 +12,9 @@ extern bool _is_etc2_supported;
 extern bool _is_s3tc_supported;
 extern const std::filesystem::path& _resolve_image_path(const std::filesystem::path& data_path, const std::optional<std::filesystem::path>& etc2_path, const std::optional<std::filesystem::path>& s3tc_path);
 extern std::vector<std::filesystem::path> _resolve_image_paths(const std::array<std::filesystem::path, 6>& data_paths, const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths, const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths);
-extern void _fetch_bytes(const std::vector<std::filesystem::path>& file_paths, const std::function<void(const std::vector<std::vector<char>>&)>& callback, bool persist);
 
 namespace detail {
+	
     namespace {
 
         static async_container<cubemap_implementation> _fetch_cubemap_async(
@@ -23,7 +24,7 @@ namespace detail {
         {
             const std::vector<std::filesystem::path> _image_paths = _resolve_image_paths(data_paths, etc2_paths, s3tc_paths);
             std::shared_ptr<std::promise<std::array<image_implementation, 6>>> _images_promise = std::make_shared<std::promise<std::array<image_implementation, 6>>>();
-            _fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {
+            fetch_bytes(_image_paths, [_images_promise](const std::vector<std::vector<char>>& _data_bytes) {
         std::array<image_implementation, 6> _images = {
             image_implementation(_data_bytes[0]),
             image_implementation(_data_bytes[1]),
@@ -48,7 +49,7 @@ cubemap_object cubemap_object::fetch(
     const std::optional<std::array<std::filesystem::path, 6>>& etc2_paths,
     const std::optional<std::array<std::filesystem::path, 6>>& s3tc_paths)
 {
-    detail::resource_container<detail::cubemap_implementation>* _resource = detail::engine_assets().cubemaps.get_or_create_by_path(data_paths[0], [&] {
+    detail::resource_container<detail::cubemap_implementation>* _resource = detail::engine_resources().cubemaps.get_or_create_by_path(data_paths[0], [&] {
         return detail::_fetch_cubemap_async(data_paths, etc2_paths, s3tc_paths);
     });
 

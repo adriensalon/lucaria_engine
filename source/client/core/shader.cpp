@@ -2,17 +2,15 @@
 #include <cereal/archives/portable_binary.hpp>
 
 #include <lucaria/core/shader.hpp>
+#include <lucaria/core/stream.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
-
-extern void _load_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback);
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace {
 
     static void load_data_from_bytes(shader_data& data, const std::vector<char>& bytes)
     {
-        _detail::bytes_stream _stream(bytes);
+        detail::bytes_stream _stream(bytes);
 #if LUCARIA_JSON
         cereal::JSONInputArchive _archive(_stream);
 #else
@@ -33,17 +31,10 @@ shader::shader(const std::vector<char>& bytes)
     load_data_from_bytes(data, bytes);
 }
 
-shader::shader(const std::filesystem::path& data_path)
-{
-    _load_bytes(data_path, [this](const std::vector<char>& _bytes) {
-        load_data_from_bytes(data, _bytes);
-    });
-}
-
 detail::async_container<shader> fetch_shader(const std::filesystem::path data_path)
 {
     std::shared_ptr<std::promise<shader>> _promise = std::make_shared<std::promise<shader>>();
-    _fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
+    detail::fetch_bytes(data_path, [_promise](const std::vector<char>& _bytes) {
         shader _shader(_bytes);
         _promise->set_value(std::move(_shader)); }, true);
 

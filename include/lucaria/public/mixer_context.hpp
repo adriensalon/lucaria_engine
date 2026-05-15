@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lucaria/system/transform.hpp>
+#include <lucaria/entity/transform.hpp>
 
 namespace lucaria {
 

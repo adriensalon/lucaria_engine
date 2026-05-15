@@ -3,12 +3,11 @@
 #include <lucaria/core/database.hpp>
 #include <lucaria/core/math.hpp>
 #include <lucaria/core/shape.hpp>
+#include <lucaria/core/fetch.hpp>
 
 namespace lucaria {
-
-extern void _fetch_bytes(const std::filesystem::path& file_path, const std::function<void(const std::vector<char>&)>& callback, bool persist);
-
 namespace detail {
+
     namespace {
 
         static void _make_convex_hull_shape(const detail::geometry_implementation& from, std::unique_ptr<btCollisionShape>& handle)
@@ -39,7 +38,7 @@ namespace detail {
         static async_container<shape_implementation> _fetch_shape_async(const std::filesystem::path& data_path, const shape_algorithm algorithm)
         {
             std::shared_ptr<std::promise<shape_implementation>> _promise = std::make_shared<std::promise<shape_implementation>>();
-            _fetch_bytes(data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
+            fetch_bytes(data_path, [_promise, algorithm](const std::vector<char>& _data_bytes) {
         geometry_implementation _geometry(_data_bytes);
         shape_implementation _shape(_geometry, algorithm);
         _promise->set_value(std::move(_shape)); }, true);
@@ -78,14 +77,14 @@ namespace detail {
 
 shape_object shape_object::create(const geometry_object geometry, const detail::shape_algorithm algorithm)
 {
-    return shape_object { detail::engine_assets().shapes.create_cell(
+    return shape_object { detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(geometry._resource->get(), algorithm))) };
 }
 
 shape_object shape_object::create_box(const glm::vec3& half_extents)
 {
-    return shape_object { detail::engine_assets().shapes.create_cell(
+    return shape_object { detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
                 new btBoxShape(convert_bullet(half_extents)), half_extents.z))) };
@@ -93,7 +92,7 @@ shape_object shape_object::create_box(const glm::vec3& half_extents)
 
 shape_object shape_object::create_sphere(const glm::float32 radius)
 {
-    return shape_object { detail::engine_assets().shapes.create_cell(
+    return shape_object { detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
                 new btSphereShape(static_cast<btScalar>(radius)), radius))) };
@@ -101,7 +100,7 @@ shape_object shape_object::create_sphere(const glm::float32 radius)
 
 shape_object shape_object::create_capsule(const glm::float32 radius, const glm::float32 height)
 {
-    return shape_object { detail::engine_assets().shapes.create_cell(
+    return shape_object { detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
                 new btCapsuleShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), radius + height * 0.5f))) };
@@ -109,7 +108,7 @@ shape_object shape_object::create_capsule(const glm::float32 radius, const glm::
 
 shape_object shape_object::create_cone(const glm::float32 radius, const glm::float32 height)
 {
-    return shape_object { detail::engine_assets().shapes.create_cell(
+    return shape_object { detail::engine_resources().shapes.create_cell(
         detail::async_container<detail::shape_implementation>(
             detail::shape_implementation(
                 new btConeShape(static_cast<btScalar>(radius), static_cast<btScalar>(height)), height * 0.5f))) };
@@ -117,11 +116,9 @@ shape_object shape_object::create_cone(const glm::float32 radius, const glm::flo
 
 shape_object shape_object::fetch(const std::filesystem::path& path, const detail::shape_algorithm algorithm)
 {
-    detail::resource_container<detail::shape_implementation>* _resource = detail::engine_assets().shapes.get_or_create_by_path(path, [&] {
+    return shape_object { detail::engine_resources().shapes.get_or_create_by_path(path, [&] {
         return detail::_fetch_shape_async(path, algorithm);
-    });
-
-    return shape_object { _resource };
+    }) };
 }
 
 [[nodiscard]] bool shape_object::has_value() const

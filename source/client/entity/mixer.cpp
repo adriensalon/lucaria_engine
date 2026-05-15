@@ -2,8 +2,8 @@
 #include <AL/alc.h>
 
 #include <lucaria/core/run.hpp>
-#include <lucaria/system/mixer.hpp>
-#include <lucaria/system/speaker.hpp>
+#include <lucaria/entity/mixer.hpp>
+#include <lucaria/entity/speaker.hpp>
 
 namespace lucaria {
 
